@@ -12,6 +12,7 @@
 
   3. Create a `.env` file with your discord bot token:
     DISCORD_TOKEN=YOUR_TOKEN_HERE
+    MONGO_URL=MONGODB_URI_HERE
 
   4. Run script:
      python main.py
