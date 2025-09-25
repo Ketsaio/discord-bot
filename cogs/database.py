@@ -49,7 +49,13 @@ class Database(commands.Cog):
                     "anti_link" : False,
                     "anti_spam" : False,
                     "muted_role" : None,
-                    "jail_role" : None
+                    "jail" : {
+                        "enabled" : False,
+                        "jail_role" : None,
+                        "jail_category" : None,
+                        "jail_text" : None,
+                        "jail_vc" : None
+                    }
                 },
                 "economy": {
                     "daily_coins" : 100,
