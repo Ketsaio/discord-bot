@@ -3,7 +3,7 @@ import os
 import discord
 from discord import app_commands
 from discord.ext import commands
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 
 load_dotenv() # loads .env
 
@@ -18,7 +18,7 @@ intents.message_content = True          # allows bot to read messages
 intents.members = True                  # allows bot to access member info
 intents.presences = True                # allows bot to see member presence/status (requires privileged intent in Discord dev portal)
 
-client = MongoClient(MONGO)
+client = AsyncMongoClient(MONGO)
 database = client["discordbot"]         # connection to database "discordbot" holding users and guilds (in future tickets and reaction roles)
 print(f"Connected to {database.name} database")
 
