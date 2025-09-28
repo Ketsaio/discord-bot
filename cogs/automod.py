@@ -11,6 +11,13 @@ class Automod(commands.Cog):
         self.guild_banned_words = {}
 
     async def safe_add_role(self, member: discord.Member, role: discord.Role):
+        """
+        Adds a role to a member safely, without raising permission errors.
+
+        Arguments:
+            member (discord.Member): The member to add roles to.
+            role (discord.Role): Role to add to member.
+        """
         if not role:
             return
         try:
@@ -21,6 +28,13 @@ class Automod(commands.Cog):
             pass
 
     async def safe_remove_role(self, member: discord.Member, role: discord.Role):
+        """
+        Removes a role from a member safely, without raising permission errors.
+
+         Arguments:
+            member (discord.Member): The member to removes role from.
+            role (discord.Role): Role to remove from member.
+        """
         if not role:
             return
         try:
@@ -28,21 +42,41 @@ class Automod(commands.Cog):
         except (discord.Forbidden, discord.HTTPException):
             pass
 
-    async def get_banned_words(self, guild_id):
-        if guild_id in self.guild_banned_words:
-            return self.guild_banned_words[guild_id]
+    async def get_banned_words(self, discord_Obj):
+        """
+        Retrieves a set of banned words for a guild.
 
-        guild_data = await self.get_guild(guild_id)
+        Arguments:
+            guild_id (int): ID of the guild.
+
+        Returns:
+            set: A set of banned words in the guild.
+        """
+
+        if discord_Obj in self.guild_banned_words:
+            return self.guild_banned_words[discord_Obj]
+
+        guild_data = await self.get_guild(discord_Obj)
 
         if guild_data is None:
             return set()
 
         words_set = set(guild_data.get("automod", {}).get("banned_words", []))
 
-        self.guild_banned_words[guild_id] = words_set
+        self.guild_banned_words[discord_Obj] = words_set
         return words_set
 
     async def categorize_messages(self, interaction : discord.Interaction, amount : int) -> tuple:
+        """
+        Categorizes messages into older than 14 days and newer.
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            amount (int): Amount of messages to categorize.
+
+        Returns:
+            tuple: Two lists of messages (older, newer).
+        """
         older = []
         newer = []
         cutoff = datetime.now(timezone.utc) - timedelta(days=14)
@@ -55,6 +89,15 @@ class Automod(commands.Cog):
         return older, newer      
 
     async def create_jail_utilities(self, interaction : discord.Interaction) -> tuple:
+        """
+        Creates utilities for jail: jail role, jail category, and jail text and voice channels.
+
+        Arguments:
+            interaction (discord.Intreaction): The interaction context.
+
+        Returns:
+            tuple: Every jail utility needed, (jail_role, jail_category, jail_text, jail_vc) or None if something goes wrong.
+        """
         try:
             jail_role = await interaction.guild.create_role(name = "Jail", permissions=discord.Permissions.none(), color=discord.Colour.dark_gray(), hoist=True, mentionable=True)
 
@@ -80,9 +123,24 @@ class Automod(commands.Cog):
             return None
 
     async def get_database_cog(self):
+        """
+        Returns the Database cog instance.
+
+        Returns:
+            Database cog or None if cog is not loaded.
+        """
         return self.bot.get_cog("Database")
 
     async def get_guild(self, discord_Obj) -> dict:
+        """
+        Retrives guild data from database.
+
+        Arguments:
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
+
+        Returns:
+            dict: Guild data dict or None is something went wrong.
+        """
         database_cog = await self.get_database_cog()
         if not database_cog:
             return None
@@ -93,9 +151,24 @@ class Automod(commands.Cog):
         return guild_data
 
     async def is_jail_enabled(self, guild_data : dict) -> bool:
+        """
+        Checks if jail is enabled in database.
+
+        Arguments:
+            guild_data (dict): Guild data from database.
+
+        Returns:
+            bool: If jail is enabled return True, otherwise returns False.
+        """
         return guild_data.get("automod", {}).get("jail", {}).get("enabled", False)
 
     async def jail_disable(self, discord_Obj):
+        """
+        Disables jail in guild.
+
+        Arguments:
+            discord_Obj: Discord object (Interaction, Role, Guild or Channel).
+        """
         database_cog = await self.get_database_cog()
         if not database_cog:
             return None
@@ -106,30 +179,55 @@ class Automod(commands.Cog):
         await database_cog.disable_jail(discord_Obj)
 
     async def get_jail_role(self, guild_data : dict, discord_Obj) -> discord.Role:
+        """
+        Retrives jail role for a guild.
+
+        Arguments:
+            guild_data (dict): Guild data from database.
+            discord_Obj: Discord object (Interaction, Role, Guild or Channel).
+
+        Returns:
+            discord.Role: Jail role or None if role id is missing.
+        """
         role_id = guild_data.get("automod", {}).get("jail", {}).get("jail_role")
         if not role_id:
             return 
         return discord_Obj.guild.get_role(role_id) 
 
     @commands.Cog.listener()
-    async def on_message(self, message : discord.Message):
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return  # ignoruj boty
 
         if not message.guild:
             return
 
-        banned_words = await self.get_banned_words(message.guild.id)
-        words = [w.strip(".,!?") for w in message.content.lower().split()]
-        try:
-            if any(word in banned_words for word in words):
+        banned_words = await self.get_banned_words(message)
+        if not banned_words:
+            return
+
+        # podziel wiadomość na słowa, usuń znaki niealfanumeryczne
+        import re
+        words = re.findall(r'\b\w+\b', message.content.lower())
+
+        if any(word in banned_words for word in words):
+            try:
                 await message.delete()
-                await message.author.send(f"Please dont swear {message.author.mention}, word from your sentence is prohibited on ***{message.guild.name}***")
-        except discord.Forbidden:
-            print("Bot dont have permission to delete messagess/cant send message to user, (on_message, Automod)")
-        except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (on_message, Automod)")
+                await message.author.send(f"Please don't swear {message.author.mention}, a word from your sentence is prohibited on ***{message.guild.name}***")
+            except discord.Forbidden:
+                print("Bot does not have permission to delete messages or DM the user.")
+            except discord.HTTPException as e:
+                print(f"Discord HTTP error: {e}")
+
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role : discord.Role):
+        """
+        Listen for jail role deletion.
+
+        Arguments:
+            role (discord.Role): Role deleted from guild.
+        """
         guild_data = await self.get_guild(role)
 
         if guild_data is None:
@@ -140,6 +238,12 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener() 
     async def on_guild_channel_delete(self, channel : discord.abc.GuildChannel):
+        """
+        Listen for jail voice/text channel delete.
+
+        Arguments:
+            channel (discord.abc.GuildChannel): Channel deleted from guild.
+        """
         guild_data = await self.get_guild(channel)
 
         if guild_data is None:
@@ -150,7 +254,12 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel : discord.abc.GuildChannel):
+        """
+        Listen for channel create. If jail is enabled sets permissions accordingly.
 
+        Arguments:
+            channel (discord.abc.GuildChannel): Channel that was created.
+        """
         if not (channel.guild.me.guild_permissions.manage_roles or channel.guild.me.guild_permissions.administrator):
             return
 
@@ -166,6 +275,13 @@ class Automod(commands.Cog):
     @app_commands.command(name = "clear", description = "Clear given amount of messages")
     @app_commands.describe(amount = "How much messages to clear")
     async def delete_messages(self, interaction: discord.Interaction, amount : int = 1):
+        """
+        Delete a set amount of messages.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            amount (int): Amount of messages to delete (if none given, defaults to 1).
+        """
 
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
@@ -196,6 +312,12 @@ class Automod(commands.Cog):
 
     @app_commands.command(name = "jail_setup", description = "Prepares jail channel and role for jail command (can take a while if u have many channels)")
     async def setup_jail(self, interaction : discord.Interaction):
+        """
+        Creates category, text and voice channel, and role for jail.
+        
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!")
@@ -232,6 +354,13 @@ class Automod(commands.Cog):
     @app_commands.command(name = "jail", description = "Send to jail or let them out")
     @app_commands.describe(member = "Person that will be send to jail")
     async def jail(self, interaction : discord.Interaction, member : discord.Member):
+        """
+        Send chosen member to jail. If member is in jail already, its will unjail them.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            member (discord.Member): Member who will be send to jail.
+        """
 
         if not (interaction.user.guild_permissions.manage_roles or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!")
@@ -261,6 +390,13 @@ class Automod(commands.Cog):
 
     @app_commands.command(name="ban", description = "Bans user")
     async def ban(self, interaction : discord.Interaction, member : discord.Member):    # to add: deleted days and reason
+        """
+        Ban chosen member.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            member (discord.Member): Member who will be banned.
+        """
 
         if not (interaction.user.guild_permissions.ban_members or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!")
@@ -281,7 +417,14 @@ class Automod(commands.Cog):
     @app_commands.command(name="timeout", description = "Timeout user")
     @app_commands.describe(member = "Person to timeout", time = "How much time? (in minutes)")
     async def timeout(self, interaction : discord.Interaction, member : discord.Member, time : int = 10):
+        """
+        Times out a chosen member.
 
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            member (discord.Member): Member who will be timed out.
+            time (int): Timeout duration in minutes (default is 10).
+        """
         if not (interaction.user.guild_permissions.moderate_members or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!")
             return
@@ -291,18 +434,51 @@ class Automod(commands.Cog):
             return
         
         try:
-            if member.communication_disabled_until is not None:
-                await member.edit(communication_disabled_until = None)
+            if member.is_timed_out():
+                await member.timeout(None)
                 await interaction.response.send_message(f"{member.name} can speak again")
             else:
-                await member.edit(communication_disabled_until = datetime.now(timezone.utc) + timedelta(minutes=time))
+                await member.timeout(datetime.now(timezone.utc) + timedelta(minutes=time))
                 await interaction.response.send_message(f"{member.name} has been timeouted")
         except discord.Forbidden:
             print("Can't timeout member, (timeout, Automod)")
         except discord.HTTPException:
             print("Something happend on line discord API - discord Bot, (timeout, Automod)")
 
-    
+    @app_commands.command(name="add_to_bad_words", description="Adds word to banned words in guild")
+    @app_commands.describe(bad_word="Bad word that will be banned from this guild")
+    async def add_bad_word(self, interaction : discord.Interaction, bad_word : str):
+        """
+        Add word to be banned/bad word.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            bad_word (str): Word that will be prohibited in the guild.
+        """
+
+        if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
+            await interaction.response.send_message("U dont have permissions to do that!")
+            return
+        
+        if not (interaction.guild.me.guild_permissions.manage_messages or interaction.guild.me.guild_permissions.administrator):
+            await interaction.response.send_message("I dont have permissions to do that!", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        guild_data = await self.get_guild(interaction)
+        if guild_data is None:
+            return
+
+        try:
+            await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$addToSet" : {"automod.banned_words" : bad_word}})
+            if interaction.guild_id in self.guild_banned_words:
+                self.guild_banned_words.pop(interaction.guild_id)
+            await interaction.followup.send(f"Following word has been selected as bad word: {bad_word}")
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
+            await interaction.followup.send("Something went wrong while updating the database.", ephemeral=True)
+            return None
 
 async def setup(bot):
     await bot.add_cog(Automod(bot))

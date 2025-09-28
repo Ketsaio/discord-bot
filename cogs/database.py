@@ -26,7 +26,7 @@ class Database(commands.Cog):
         guild_id = None
         if isinstance(discord_Obj, discord.Interaction):
             guild_id = str(discord_Obj.guild_id)
-        elif isinstance(discord_Obj, (discord.abc.GuildChannel, discord.Role, discord.Member, discord.channel)):
+        elif isinstance(discord_Obj, (discord.abc.GuildChannel, discord.Role, discord.Member, discord.Message)):
             guild_id = str(discord_Obj.guild.id)
         else:
             return None
