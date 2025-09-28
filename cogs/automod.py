@@ -4,9 +4,20 @@ from discord import app_commands
 from datetime import datetime, timedelta, timezone
 import asyncio
 from pymongo.errors import PyMongoError
+import re
 
 class Automod(commands.Cog):
+    """
+    Cog responsible for automoderation features, including banned words detection,
+    jail setup and management, message clearing, bans, and timeouts.
+    """
     def __init__(self, bot):
+        """
+        Initializes the Automod cog.
+
+        Arguments:
+            bot: Discord bot instance.
+        """
         self.bot = bot
         self.guild_banned_words = {}
 
@@ -47,7 +58,7 @@ class Automod(commands.Cog):
         Retrieves a set of banned words for a guild.
 
         Arguments:
-            guild_id (int): ID of the guild.
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
 
         Returns:
             set: A set of banned words in the guild.
@@ -167,7 +178,7 @@ class Automod(commands.Cog):
         Disables jail in guild.
 
         Arguments:
-            discord_Obj: Discord object (Interaction, Role, Guild or Channel).
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
         """
         database_cog = await self.get_database_cog()
         if not database_cog:
@@ -184,7 +195,7 @@ class Automod(commands.Cog):
 
         Arguments:
             guild_data (dict): Guild data from database.
-            discord_Obj: Discord object (Interaction, Role, Guild or Channel).
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
 
         Returns:
             discord.Role: Jail role or None if role id is missing.
@@ -196,18 +207,30 @@ class Automod(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        """
+        Listen for any message send, then checks if its a guild banned word.
+
+        Arguments:
+            message (discord.Message): Message sent in guild channel.
+        """
+
         if message.author.bot:
-            return  # ignoruj boty
+            return
 
         if not message.guild:
+            return
+        
+        guild_data = await self.get_guild(message)
+
+        is_enabled = guild_data.get("automod", {}).get("anti_bad_words")
+
+        if not is_enabled:
             return
 
         banned_words = await self.get_banned_words(message)
         if not banned_words:
             return
 
-        # podziel wiadomość na słowa, usuń znaki niealfanumeryczne
-        import re
         words = re.findall(r'\b\w+\b', message.content.lower())
 
         if any(word in banned_words for word in words):
@@ -218,7 +241,6 @@ class Automod(commands.Cog):
                 print("Bot does not have permission to delete messages or DM the user.")
             except discord.HTTPException as e:
                 print(f"Discord HTTP error: {e}")
-
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role : discord.Role):
@@ -449,7 +471,7 @@ class Automod(commands.Cog):
     @app_commands.describe(bad_word="Bad word that will be banned from this guild")
     async def add_bad_word(self, interaction : discord.Interaction, bad_word : str):
         """
-        Add word to be banned/bad word.
+         Add or remove a bad word from the guild's banned list.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -470,15 +492,48 @@ class Automod(commands.Cog):
         if guild_data is None:
             return
 
+        banned_words = set(guild_data.get("automod", {}).get("banned_words", []))
+
         try:
-            await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$addToSet" : {"automod.banned_words" : bad_word}})
+            if bad_word.lower() in banned_words:
+                await self.bot.database["guilds"].update_one(
+                    {"_id": str(interaction.guild_id)},
+                    {"$pull": {"automod.banned_words": bad_word.lower()}}
+                )
+                action = "removed"
+            else:
+                await self.bot.database["guilds"].update_one(
+                    {"_id": str(interaction.guild_id)},
+                    {"$addToSet": {"automod.banned_words": bad_word.lower()}}
+                )
+                action = "added"
             if interaction.guild_id in self.guild_banned_words:
                 self.guild_banned_words.pop(interaction.guild_id)
-            await interaction.followup.send(f"Following word has been selected as bad word: {bad_word}")
+            await interaction.followup.send(f"{bad_word} has been {action}")
         except PyMongoError as e:
             print(f"PyMongoError: {e}")
             await interaction.followup.send("Something went wrong while updating the database.", ephemeral=True)
             return None
+        
+    @app_commands.command(name="check_messages_for_bad_words")
+    async def check_bool_bad_words(self, interaction : discord.Interaction):
+        """
+        Check if deleting bad words is enabled
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
+        
+        guild_data = await self.get_guild(interaction)
+
+        is_enabled = guild_data.get("automod", {}).get("anti_bad_words")
+
+        if not is_enabled:
+            await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"automod.anti_bad_words" : True}})
+            await interaction.response.send_message("Scanning for bad words in this guild!")
+        else:
+            await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"automod.anti_bad_words" : False}})
+            await interaction.response.send_message("Scanning turned off.")
 
 async def setup(bot):
     await bot.add_cog(Automod(bot))

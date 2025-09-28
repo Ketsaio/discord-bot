@@ -3,11 +3,27 @@ import discord
 from pymongo.errors import PyMongoError
 
 class Database(commands.Cog):
-    def __init__(self, bot):        #initializing Cog
+    """
+    Cog responsible for any action in database including retrieving, 
+    updating and creating new documents.
+    """
+    def __init__(self, bot):
+        """
+        Initializes Database cog.
+
+        Arguments:
+            bot: Discord bot instance.
+        """
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        """
+        Listen for member joining the guild and creates document for them in database if it doesn't already exists.
+
+        Arguments:
+            member (discord.Member): Member who just joined the guild.
+        """
 
         collection = await self.bot.database["users"]
 
@@ -23,6 +39,16 @@ class Database(commands.Cog):
             })
 
     async def find_or_create_guild(self, discord_Obj) -> dict:
+        """
+        Retrieve guild data from database. If guild document dont exist, creates it.
+
+        Arguments:
+            discord_Obj: Discord object (Interaction, Channel, Member, Message)
+
+        Returns:
+            dict: Guild data document from database or None if error occured.
+        """
+
         guild_id = None
         if isinstance(discord_Obj, discord.Interaction):
             guild_id = str(discord_Obj.guild_id)
@@ -41,6 +67,12 @@ class Database(commands.Cog):
             return None
 
     async def add_guild_to_database(self, guild):
+        """
+        Create document for guild in database.
+
+        Arguments:
+            guild (discord.guild): The guild to add.
+        """
         try:
             await self.bot.database["guilds"].insert_one({
                     "_id": str(guild.id),
@@ -81,9 +113,8 @@ class Database(commands.Cog):
                             "noob","n00b","lame","scrub","trash","rekt","sux","suxx","suck","loserface","pwned","fail","fml","omgwtf","wtf","omfg","stfu","gtfo",
                             "f@ck","sh!t","d!ck","b!tch","c*nt","a$$","@sshole","c0ck","f*ck","s#it","b@$tard","b@stard"
                             ],
-                        "anti_link" : False,
-                        "anti_spam" : False,
-                        "muted_role" : None,
+                        "anti_bad_words" : False,
+                        "anti_link" : None,
                         "jail" : {
                             "enabled" : False,
                             "jail_role" : None,
@@ -100,14 +131,25 @@ class Database(commands.Cog):
             print(f"PyMongoError : {e}")
 
     async def disable_jail(self, discord_Obj):
+        """
+        Disable jail system for guild.
+
+        Arguments:
+            discord_Obj: Discord object (Interaction, Channel, Member, Message)
+        """
         try:
             await self.bot.database["guilds"].update_one({"_id" : str(discord_Obj.guild.id)}, {"$set" : {"automod.jail.enabled" : False}})
         except PyMongoError as e:
             print(f"PyMongo error {e}")
 
-
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
+        """
+        Listen for bot joiningthe guild, then creates documents for guild in database if it doesn't exist.
+
+        Arguments:
+            guild (discord.guild): Guild data.
+        """
 
         collection = await self.bot.database["guilds"]
 
