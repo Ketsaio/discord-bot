@@ -515,7 +515,7 @@ class Automod(commands.Cog):
             await interaction.followup.send("Something went wrong while updating the database.", ephemeral=True)
             return None
         
-    @app_commands.command(name="check_messages_for_bad_words")
+    @app_commands.command(name="check_messages_for_bad_words", description="Enable/disable checking every message for potential bad words")
     async def check_bool_bad_words(self, interaction : discord.Interaction):
         """
         Check if deleting bad words is enabled
