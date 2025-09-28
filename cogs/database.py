@@ -114,7 +114,6 @@ class Database(commands.Cog):
                             "f@ck","sh!t","d!ck","b!tch","c*nt","a$$","@sshole","c0ck","f*ck","s#it","b@$tard","b@stard"
                             ],
                         "anti_bad_words" : False,
-                        "anti_link" : None,
                         "jail" : {
                             "enabled" : False,
                             "jail_role" : None,
