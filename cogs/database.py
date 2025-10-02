@@ -24,19 +24,12 @@ class Database(commands.Cog):
         Arguments:
             member (discord.Member): Member who just joined the guild.
         """
-
-        collection = await self.bot.database["users"]
-
-        if not await collection.find_one({"_id" : member.id}):   # Create user document if doesn't exist
-            await collection.insert_one({
-                "_id" : str(member.id),
-                "name" : member.name,
-                "coins" : 0,
-                "xp" :  0,
-                "level" : 1,
-                "last_daily_reward" : None,
-                "level_up_notification" : True
-            })
+        try:
+            member_in_database = await self.bot.database["users"].find_one({"_id" : str(member.id)})
+            if member_in_database is None:
+                await self.add_member_to_database(member)
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
 
     async def find_or_create_guild(self, discord_Obj) -> dict:
         """
@@ -122,8 +115,8 @@ class Database(commands.Cog):
                             "jail_vc" : None
                         }
                     },
-                    "levelSystem": {
-                        "xp_per_message" : 5,
+                    "item_shop" : {
+                        "piece of paper" : 100
                     }
                 })
         except PyMongoError as e:
@@ -149,11 +142,48 @@ class Database(commands.Cog):
         Arguments:
             guild (discord.guild): Guild data.
         """
+        try:
+            guild_in_database = await self.bot.database["guilds"].find_one({"_id" : str(guild.id)})
 
-        collection = await self.bot.database["guilds"]
+            if guild_in_database is None:
+                await self.add_guild_to_database(guild)
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
 
-        if not await collection.find_one({"_id" : str(guild.id)}):     # Create guild document if doesn't exist
-            await self.add_guild_to_database(guild)
+    async def find_or_create__member(self, discord_Obj):
+        member_id = None
+        if isinstance(discord_Obj, discord.Interaction):
+            member_id = str(discord_Obj.user.id)
+        elif isinstance(discord_Obj, discord.Member):
+            member_id = str(discord_Obj.id)
+        else:
+            return None
+
+        try:
+            user_data = await self.bot.database["users"].find_one({"_id" : member_id})
+            if user_data is None:
+                await self.add_member_to_database(member_id)
+                user_data = await self.bot.database["users"].find_one({"_id" : member_id})
+            return user_data
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
+            return None
+
+    async def add_member_to_database(self, member_id : int):
+        try:
+            await self.bot.database["users"].insert_one({
+                "_id" : str(member_id),
+                "coins" : 0,
+                "xp" :  0,
+                "level" : 1,
+                "last_daily_reward" : None,
+                "level_up_notification" : True
+            })
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
         
+    async def check_instance(self, discord_Obj):
+        pass
+
 async def setup(bot):
     await bot.add_cog(Database(bot))     # Register the cog with the bot
