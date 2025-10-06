@@ -1,0 +1,74 @@
+{
+    "kitty": {
+        "emote": "🐈",
+        "cost": 100,
+        "rarity": "common",
+        "ability": "faster_pet_leveling",
+        "desc" : "Kitty levels faster than other pets",
+        "rare_emote" : ":green_circle:"
+    },
+    "doggo": {
+        "emote": "🐈",
+        "cost": 500,
+        "rarity": "rare",
+        "ability": "xp_boost",
+        "desc" : "Doggo gives you xp boost",
+        "rare_emote" : ":blue_circle:"
+    },
+    "parrot": {
+        "emote": "🦜",
+        "cost": 100,
+        "rarity": "common",
+        "ability": "repeating",
+        "desc" : "Parrot repeats your every sentence",
+        "rare_emote" : ":green_circle:"
+    },
+    "dragon": {
+        "emote": "🐉",
+        "cost": 2000,
+        "rarity": "legendary",
+        "ability": "better_fights",
+        "desc" : "A legendary dragons is the toughest fighter",
+        "rare_emote" : ":yellow_circle:"
+    },
+    "unicorn": {
+        "emote": "🦄",
+        "cost": 1000,
+        "rarity": "epic",
+        "ability": "smthg",
+        "desc" : "Great to showing off",
+        "rare_emote" : ":purple_circle:"
+    },
+    "rat": {
+        "emote": "🐀",
+        "cost": 1000,
+        "rarity": "epic",
+        "ability": "bonus_legal_income",
+        "desc" : "Gives u bonus for every legal income",
+        "rare_emote" : ":purple_circle:"
+    },
+    "squid": {
+        "emote": "🦑",
+        "cost": 500,
+        "rarity": "rare",
+        "ability": "bonus_illegal_income",
+        "desc" : "Gives u bonus for every illegal income",
+        "rare_emote" : ":blue_circle:"
+    },
+    "ghost": {
+        "emote": "👻",
+        "cost": 500,
+        "rarity": "rare",
+        "ability": "lootbox_boost",
+        "desc" : "Boosts your chances in lootboxes",
+        "rare_emote" : ":blue_circle:"
+    },
+    "unjail" : {
+        "emote" : "⛓️",
+        "cost" : 12000,
+        "rarity" : "null",
+        "ability" : "jail_free",
+        "desc" : "Bail yourself from jail",
+        "rare_emote" : ":customs:"
+    }
+}
