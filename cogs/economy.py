@@ -47,11 +47,12 @@ class Economy(commands.Cog):
     async def daily_reward(self, interaction : discord.Interaction):
         member_data = await self.get_member(interaction)
         last_daily = member_data.get("last_daily_reward")
-        if datetime.now() - last_daily < timedelta(hours=24):
-            await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
-        elif datetime.now() - last_daily >= timedelta(hours=24) or last_daily is None:
+
+        if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
             await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
             await interaction.response.send_message("U claimed your daily! Come back in 24h")
+        elif datetime.now() - last_daily < timedelta(hours=24):
+            await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))

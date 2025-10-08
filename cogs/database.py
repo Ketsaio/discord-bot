@@ -178,7 +178,7 @@ class Database(commands.Cog):
                 "level" : 1,
                 "last_daily_reward" : None,
                 "level_up_notification" : True,
-                "pets" : []
+                "pets" : {}
             })
         except PyMongoError as e:
             print(f"PyMongoError: {e}")

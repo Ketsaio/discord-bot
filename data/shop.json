@@ -5,7 +5,9 @@
         "rarity": "common",
         "ability": "faster_pet_leveling",
         "desc" : "Kitty levels faster than other pets",
-        "rare_emote" : ":green_circle:"
+        "rare_emote" : ":green_circle:",
+        "level" : 1,
+        "xp" : 0
     },
     "doggo": {
         "emote": "🐈",
@@ -35,8 +37,8 @@
         "emote": "🦄",
         "cost": 1000,
         "rarity": "epic",
-        "ability": "smthg",
-        "desc" : "Great to showing off",
+        "ability": "gif_spongebob",
+        "desc" : "U have 10% chance for spongebob gif as a followback to your message",
         "rare_emote" : ":purple_circle:"
     },
     "rat": {

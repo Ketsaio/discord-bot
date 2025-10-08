@@ -1,19 +1,30 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from random import randint
 from pymongo.errors import PyMongoError
-from datetime import datetime, timedelta, timezone
 import json
+from functools import partial
 
 class ItemShop(discord.ui.Select):
-    def __init__(self, shop_items: dict):
+    def __init__(self, shop_items: dict, bot):
+
+        self.bot = bot
 
         self.items = shop_items
 
         options = [discord.SelectOption(label=name, description=item['desc'], emoji=item['emote']) for name, item in shop_items.items()]
 
         super().__init__(placeholder="Choose your item!", min_values=1, max_values=1, options=options)
+
+    async def get_database_cog(self):
+        return self.bot.get_cog("Database")
+    
+    async def get_member(self, discord_Obj):
+        database_cog = await self.get_database_cog()
+        member_data = await database_cog.find_or_create__member(discord_Obj)
+        if member_data is None:
+            return None
+        return member_data
 
     async def callback(self, interaction : discord.Interaction):
         chosen_label = self.values[0]
@@ -25,7 +36,7 @@ class ItemShop(discord.ui.Select):
         elif chosen_item['rarity'] == "rare":
             color = discord.Color.blue()
         elif chosen_item['rarity'] == "epic":
-            color = discord.Color.pink()
+            color = discord.Color.purple()
         elif chosen_item['rarity'] == "legendary":
             color = discord.Color.gold()
 
@@ -37,10 +48,24 @@ class ItemShop(discord.ui.Select):
 
         button = discord.ui.Button(label="BUY", style=discord.ButtonStyle.primary)
 
-        async def button_callback(interaction : discord.Interaction):
-            await interaction.response.send_message(f"U bought {chosen_label} ✅")
+        async def button_callback(interaction : discord.Interaction, chosen_item, chosen_label):
+            member_data = await self.get_member(interaction)
 
-        button.callback = button_callback
+            member_coins = member_data.get("coins", {})
+            member_pets = member_data.get("pets", {})
+
+            if member_coins < chosen_item['cost']:
+                await interaction.response.send_message("**U don't have enought coins!**", ephemeral=True)
+                return
+
+            if chosen_label not in member_pets:
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"pets.{chosen_label}": chosen_item}, "$inc" : {"coins" : chosen_item['cost'] * -1}})
+                await interaction.response.send_message(f"U bought **{chosen_label}**", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)
+
+
+        button.callback = partial(button_callback, chosen_item=chosen_item, chosen_label=chosen_label)
 
         new_view = discord.ui.View()
         new_view.add_item(button)
@@ -52,9 +77,10 @@ class ItemShop(discord.ui.Select):
         
 
 class ShopView(discord.ui.View):
-    def __init__(self, shop_items : dict):
+    def __init__(self, shop_items : dict, bot):
         super().__init__(timeout=60)
-        self.add_item(ItemShop(shop_items))
+        self.bot = bot
+        self.add_item(ItemShop(shop_items, bot))
 
 class Shop(commands.Cog):
     def __init__(self, bot):
@@ -79,7 +105,7 @@ class Shop(commands.Cog):
             )
 
 
-        view = ShopView(self.shop_items)
+        view = ShopView(self.shop_items, self.bot)
 
         embed.set_footer(text=f"Common - 🟢, rare - 🔵, epic - 🟣, legendary - 🟡")
 
