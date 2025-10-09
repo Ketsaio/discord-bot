@@ -80,3 +80,55 @@ class Economy(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))
+
+# code to change, written by me
+'''
+async def lootbox(self, interaction : discord.Interaction, member_inv : discord.Member):
+
+        colors = ["🟩","🟦", "🟪", "🟨", "🟥", "⬜"]
+
+        embed = discord.Embed(
+            title="🎰🎰🎰",
+            description="*Jackpot this time!*",
+            color=discord.Color.red()
+        )
+
+        slot1, slot2, slot3 = choice(colors), choice(colors), choice(colors)
+
+        embed.add_field(
+                name="",
+                value=f"{slot1}|{slot2}|{slot3}"
+        )
+
+        await interaction.response.send_message(embed=embed)
+
+        await sleep(0.3)
+
+        for _ in range(8):
+            slot1, slot2, slot3 = choice(colors), choice(colors), choice(colors)
+            embed.set_field_at(
+                index=0,
+                name="",
+                value=f"{slot1}|{slot2}|{slot3}"
+            )
+            await interaction.edit_original_response(embed=embed)
+            await sleep(0.3)
+
+        if slot1 == slot2 == slot3:
+            if slot1 == colors[0]:
+                if randint(1,2) == 1:
+                    green = [{name : rest} for name, rest in self.items.items() if rest['rarity'] == "common"]
+                    picked = choice(green)
+                    key = next(iter(picked))
+                    if key not in member_inv:
+                        await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{key}" : picked[key]}})
+                        await interaction.channel.send(f"{interaction.user.mention} just dropped {key}")
+                    else:
+                        await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : 50}})
+                        await interaction.channel.send(f"{interaction.user.mention} gained 50 coin because he/she has an item!")
+                else:
+                    money = randint(50,100)
+                    await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : money}})
+                    await interaction.channel.send(f"{interaction.user.mention} just got {money} coins!")
+            
+'''

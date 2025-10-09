@@ -4,6 +4,8 @@ from discord import app_commands
 from pymongo.errors import PyMongoError
 import json
 from functools import partial
+from asyncio import sleep
+from random import choice, randint
 
 class ItemShop(discord.ui.Select):
     def __init__(self, shop_items: dict, bot):
@@ -25,6 +27,48 @@ class ItemShop(discord.ui.Select):
         if member_data is None:
             return None
         return member_data
+    
+    async def lootbox(self, interaction : discord.Interaction, member_inv : discord.Member):
+
+        embed = discord.Embed(
+            title="🎰🎰🎰",
+            description="*Jackpot this time!*",
+            color=discord.Color.red()
+        )
+
+        tier = ["common", "rare", "epic", "legendary"]
+
+        x = randint(1, 1000)
+
+        if x <= 650:
+            tier = "common"
+        elif x > 650 and x <= 800:
+            tier = "rare"
+        elif x > 800 and x <= 999:
+            tier = "epic"
+        else:
+            tier = "legendary"
+
+        items_in_tier = [{name : rest} for name, rest in self.items.items() if rest['rarity'] == tier]
+        picked = choice(items_in_tier)
+        key = next(iter(picked))
+
+        if key not in member_inv:
+            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{key}" : picked[key]}})
+            message = f"{interaction.user.name} just dropped {picked[key]['emote']}**{key.capitalize()}**"
+        else:
+            how_much = randint(45, 125)
+            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : how_much}})
+            message = f"{interaction.user.name} dropped {how_much} coins because he/she has ***{key}*** {[picked[key]['emote']]}"
+
+        new_embed = discord.Embed(
+            title=message,
+            description=f"*Congratulations!*",
+            color=discord.Color.red()
+        )
+
+        await interaction.response.send_message(embed=new_embed)
+        await interaction.channel.send(interaction.user.mention)
 
     async def callback(self, interaction : discord.Interaction):
         chosen_label = self.values[0]
@@ -40,7 +84,7 @@ class ItemShop(discord.ui.Select):
         elif chosen_item['rarity'] == "legendary":
             color = discord.Color.gold()
         else:
-            color = discord.Color.dark_gray()
+            color = discord.Color.red()
 
         new_embed = discord.Embed(
             title = f"{chosen_item['emote']} **{chosen_label.capitalize()}**",
@@ -57,9 +101,14 @@ class ItemShop(discord.ui.Select):
             member_inv = member_data.get("inventory", {})
 
             if member_coins < chosen_item['cost']:
-                await interaction.response.send_message("**U don't have enought coins!**", ephemeral=True)
+                await interaction.response.send_message("**U don't have enought coins!**")
                 return
             
+            if chosen_label == "pet_lootbox":
+                await self.lootbox(interaction, member_inv)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : chosen_item['cost'] * -1}})
+                return
+
             if chosen_label == "unjail":
 
                 guild_data = await self.bot.database["guilds"].find_one({"_id" : str(interaction.guild_id)})
@@ -70,14 +119,15 @@ class ItemShop(discord.ui.Select):
 
                 if jail_role in interaction.user.roles:
                     await interaction.user.remove_roles(jail_role)
-                    await interaction.response.send_message("U are free!", ephemeral=True)
+                    await interaction.response.send_message("U are free!")
+                    await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : chosen_item['cost'] * -1}})
                 else:
                     await interaction.response.send_message("U are not in jail!")
                 return
 
             if chosen_label not in member_inv:
                 await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{chosen_label}": chosen_item}, "$inc" : {"coins" : chosen_item['cost'] * -1}})
-                await interaction.response.send_message(f"U bought **{chosen_label}**", ephemeral=True)
+                await interaction.response.send_message(f"U bought **{chosen_label}**")
             else:
                 await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)
 
@@ -89,7 +139,7 @@ class ItemShop(discord.ui.Select):
 
         new_embed.set_footer(text=f"Remeber {chosen_label.capitalize()} costs {chosen_item['cost']} coins!!")
 
-        await interaction.response.send_message(embed=new_embed, view=new_view, ephemeral=True)
+        await interaction.response.send_message(embed=new_embed, view=new_view)
 
         
 
@@ -126,7 +176,7 @@ class Shop(commands.Cog):
 
         embed.set_footer(text=f"Common - 🟢, rare - 🔵, epic - 🟣, legendary - 🟡")
 
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        await interaction.response.send_message(embed=embed, view=view)
 
 async def setup(bot):
     await bot.add_cog(Shop(bot))

@@ -88,5 +88,15 @@
         "rare_emote" : ":customs:",
         "level" : "null",
         "xp" : "null"
+    },
+    "pet_lootbox" : {
+         "emote" : "🎀",
+         "cost" : 120,
+        "rarity" : "null",
+        "ability" : "null",
+        "desc" : "Test your luck and maybe get your new companion",
+        "rare_emote" : "🎀",
+        "level" : "null",
+        "xp"  : "null"
     }
 }
