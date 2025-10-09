@@ -54,5 +54,29 @@ class Economy(commands.Cog):
         elif datetime.now() - last_daily < timedelta(hours=24):
             await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
 
+    @app_commands.command(name="inventory", description="Take a look into your inventory")
+    async def inventory(self, interaction : discord.Interaction):
+        member_data = await self.get_member(interaction)
+
+        #await interaction.response.defer(ephemeral=True, thinking=True)
+
+        inventory = member_data.get("inventory", {})
+
+        embed = discord.Embed(
+            title=f"{interaction.user.name} inventory!",
+            description="",
+            color=discord.Color.brand_green()
+        )
+
+        for name, item in inventory.items():
+            embed.add_field(
+                name=f"{item['emote']} **{name.capitalize()}**",
+                value=f"*{item['desc']}*\nRarity: {item['rare_emote']}\nLevel: {item['level']}\nxp: {item['xp']}",
+                inline=True
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+
 async def setup(bot):
     await bot.add_cog(Economy(bot))

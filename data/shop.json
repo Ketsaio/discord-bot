@@ -1,4 +1,24 @@
 {
+    "dragon": {
+        "emote": "🐉",
+        "cost": 2000,
+        "rarity": "legendary",
+        "ability": "better_fights",
+        "desc" : "A legendary dragons is the toughest fighter",
+        "rare_emote" : ":yellow_circle:",
+        "level" : 1,
+        "xp" : 0
+    },
+    "doggo": {
+        "emote": "🦮",
+        "cost": 500,
+        "rarity": "rare",
+        "ability": "xp_boost",
+        "desc" : "Doggo gives you xp boost",
+        "rare_emote" : ":blue_circle:",
+        "level" : 1,
+        "xp" : 0
+    },
     "kitty": {
         "emote": "🐈",
         "cost": 100,
@@ -9,45 +29,15 @@
         "level" : 1,
         "xp" : 0
     },
-    "doggo": {
-        "emote": "🐈",
-        "cost": 500,
-        "rarity": "rare",
-        "ability": "xp_boost",
-        "desc" : "Doggo gives you xp boost",
-        "rare_emote" : ":blue_circle:"
-    },
-    "parrot": {
-        "emote": "🦜",
-        "cost": 100,
-        "rarity": "common",
-        "ability": "repeating",
-        "desc" : "Parrot repeats your every sentence",
-        "rare_emote" : ":green_circle:"
-    },
-    "dragon": {
-        "emote": "🐉",
-        "cost": 2000,
-        "rarity": "legendary",
-        "ability": "better_fights",
-        "desc" : "A legendary dragons is the toughest fighter",
-        "rare_emote" : ":yellow_circle:"
-    },
     "unicorn": {
         "emote": "🦄",
         "cost": 1000,
         "rarity": "epic",
         "ability": "gif_spongebob",
         "desc" : "U have 10% chance for spongebob gif as a followback to your message",
-        "rare_emote" : ":purple_circle:"
-    },
-    "rat": {
-        "emote": "🐀",
-        "cost": 1000,
-        "rarity": "epic",
-        "ability": "bonus_legal_income",
-        "desc" : "Gives u bonus for every legal income",
-        "rare_emote" : ":purple_circle:"
+        "rare_emote" : ":purple_circle:",
+        "level" : 1,
+        "xp" : 0
     },
     "squid": {
         "emote": "🦑",
@@ -55,7 +45,29 @@
         "rarity": "rare",
         "ability": "bonus_illegal_income",
         "desc" : "Gives u bonus for every illegal income",
-        "rare_emote" : ":blue_circle:"
+        "rare_emote" : ":blue_circle:",
+        "level" : 1,
+        "xp" : 0
+    },
+    "parrot": {
+        "emote": "🦜",
+        "cost": 100,
+        "rarity": "common",
+        "ability": "repeating",
+        "desc" : "Parrot repeats your every sentence",
+        "rare_emote" : ":green_circle:",
+        "level" : 1,
+        "xp" : 0
+    },
+    "rat": {
+        "emote": "🐀",
+        "cost": 1000,
+        "rarity": "epic",
+        "ability": "bonus_legal_income",
+        "desc" : "Gives u bonus for every legal income",
+        "rare_emote" : ":purple_circle:",
+        "level" : 1,
+        "xp" : 0
     },
     "ghost": {
         "emote": "👻",
@@ -63,7 +75,9 @@
         "rarity": "rare",
         "ability": "lootbox_boost",
         "desc" : "Boosts your chances in lootboxes",
-        "rare_emote" : ":blue_circle:"
+        "rare_emote" : ":blue_circle:",
+        "level" : 1,
+        "xp" : 0
     },
     "unjail" : {
         "emote" : "⛓️",
@@ -71,6 +85,8 @@
         "rarity" : "null",
         "ability" : "jail_free",
         "desc" : "Bail yourself from jail",
-        "rare_emote" : ":customs:"
+        "rare_emote" : ":customs:",
+        "level" : "null",
+        "xp" : "null"
     }
 }

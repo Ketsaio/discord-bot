@@ -39,6 +39,8 @@ class ItemShop(discord.ui.Select):
             color = discord.Color.purple()
         elif chosen_item['rarity'] == "legendary":
             color = discord.Color.gold()
+        else:
+            color = discord.Color.dark_gray()
 
         new_embed = discord.Embed(
             title = f"{chosen_item['emote']} **{chosen_label.capitalize()}**",
@@ -52,14 +54,29 @@ class ItemShop(discord.ui.Select):
             member_data = await self.get_member(interaction)
 
             member_coins = member_data.get("coins", {})
-            member_pets = member_data.get("pets", {})
+            member_inv = member_data.get("inventory", {})
 
             if member_coins < chosen_item['cost']:
                 await interaction.response.send_message("**U don't have enought coins!**", ephemeral=True)
                 return
+            
+            if chosen_label == "unjail":
 
-            if chosen_label not in member_pets:
-                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"pets.{chosen_label}": chosen_item}, "$inc" : {"coins" : chosen_item['cost'] * -1}})
+                guild_data = await self.bot.database["guilds"].find_one({"_id" : str(interaction.guild_id)})
+
+                role_id = guild_data.get("automod", {}).get("jail", {}).get("jail_role", {})
+
+                jail_role = interaction.guild.get_role(role_id)
+
+                if jail_role in interaction.user.roles:
+                    await interaction.user.remove_roles(jail_role)
+                    await interaction.response.send_message("U are free!", ephemeral=True)
+                else:
+                    await interaction.response.send_message("U are not in jail!")
+                return
+
+            if chosen_label not in member_inv:
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{chosen_label}": chosen_item}, "$inc" : {"coins" : chosen_item['cost'] * -1}})
                 await interaction.response.send_message(f"U bought **{chosen_label}**", ephemeral=True)
             else:
                 await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)
