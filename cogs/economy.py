@@ -24,14 +24,17 @@ class Economy(commands.Cog):
 
         if message.author.bot:
             return
-
-        added_xp = randint(1,5)
-        member_data = await self.get_member(message.author)
-        await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : added_xp}})
-        member_data = await self.get_member(message.author)
-        xp = member_data.get("xp")
-        if xp >= 10:
-            await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : -10,"level" : 1}})
+        try:
+            added_xp = randint(1,5)
+            member_data = await self.get_member(message.author)
+            await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : added_xp}})
+            member_data = await self.get_member(message.author)
+            xp = member_data.get("xp")
+            if xp >= 10:
+                await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : -10,"level" : 1}})
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
+    
 
     @app_commands.command(name="balance", description="Check your balance!")
     async def check_bal(self, interaction : discord.Interaction):
@@ -48,17 +51,18 @@ class Economy(commands.Cog):
         member_data = await self.get_member(interaction)
         last_daily = member_data.get("last_daily_reward")
 
-        if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
-            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
-            await interaction.response.send_message("U claimed your daily! Come back in 24h")
-        elif datetime.now() - last_daily < timedelta(hours=24):
-            await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
+        try:
+            if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
+                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
+                await interaction.response.send_message("U claimed your daily! Come back in 24h")
+            elif datetime.now() - last_daily < timedelta(hours=24):
+                await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
 
     @app_commands.command(name="inventory", description="Take a look into your inventory")
     async def inventory(self, interaction : discord.Interaction):
         member_data = await self.get_member(interaction)
-
-        #await interaction.response.defer(ephemeral=True, thinking=True)
 
         inventory = member_data.get("inventory", {})
 
