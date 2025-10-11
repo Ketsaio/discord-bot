@@ -29,7 +29,7 @@ class Economy(commands.Cog):
     
     async def get_member(self, discord_Obj):
         """
-        Retrives guild data from database.
+        Retrieves guild data from database.
 
         Arguments:
             discord_Obj: Discord Object (Interaction, Member, Role or Channel).
@@ -46,7 +46,7 @@ class Economy(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
         """
-        Listen for any message send, then gives author 1-5 xp.
+        Listens for any message send, then gives author 1-5 xp.
 
         Arguments:
             message (discord.Message): Message that was send in channel.
@@ -69,7 +69,7 @@ class Economy(commands.Cog):
     @app_commands.command(name="balance", description="Check your balance!")
     async def check_bal(self, interaction : discord.Interaction):
         """
-        Retrives user balance from database.
+        Retrieves user balance from database.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -105,7 +105,7 @@ class Economy(commands.Cog):
     @app_commands.command(name="inventory", description="Take a look into your inventory")
     async def inventory(self, interaction : discord.Interaction):
         """
-        Retrives user inventory from database.
+        Retrieves user inventory from database.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.

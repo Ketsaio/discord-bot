@@ -9,7 +9,7 @@ from random import choice, randint
 
 class Shop(commands.Cog):
     """
-    Cog responsible for Shop structure and functionality including: setting up shop and buying from it.
+    Cog responsible for the Shop structure and functionality, including setting up the shop and buying from it.
     """
     def __init__(self, bot):
         """
@@ -42,7 +42,7 @@ class Shop(commands.Cog):
     
             view = ShopView(self.shop_items, self.bot)
 
-            await interaction.response.send_message(embed=embed, view=view)
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         except discord.Forbidden:
             print(f"Cant open shop! (shop command, Shop)")
         except discord.HTTPException:
@@ -53,7 +53,7 @@ class Shop(commands.Cog):
 
 class ShopView(discord.ui.View):
     """
-    Class responsible for merging embed and view together.
+    Class responsible for combining the embed and view together.
     """
     def __init__(self, shop_items : dict, bot):
         """
@@ -68,7 +68,7 @@ class ShopView(discord.ui.View):
 
 class ItemShop(discord.ui.Select):
     """
-    Class resposible for creating select for shop embed, creating specifics items embeds and handling buying items + unjail.
+    Class responsible for creating the select menu for the shop embed, generating specific item embeds, and handling purchases or unjailing.
     """
     def __init__(self, shop_items: dict, bot):
         """
@@ -93,7 +93,7 @@ class ItemShop(discord.ui.Select):
     
     async def get_member(self, discord_Obj):
         """
-        Retrives guild data from database.
+        Retrieves guild data from database.
 
         Arguments:
             discord_Obj: Discord Object (Interaction, Member, Role or Channel).
@@ -109,7 +109,7 @@ class ItemShop(discord.ui.Select):
     
     async def get_jail_role(self, interaction : discord.Interaction):
         """
-        Retrives jail role from database.
+        Retrieves jail role from database.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -139,7 +139,7 @@ class ItemShop(discord.ui.Select):
     
     async def deduct_money(self, interaction : discord.Interaction, item):
         """
-        Deducts money from user.
+        Deducts money from the user.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -172,7 +172,7 @@ class ItemShop(discord.ui.Select):
         
     async def color_picker(self, rarity : str):
         """
-        Picks color for embed with item details.
+        Picks a color for embed with item details.
 
         Arguments:
             rarity (str): How rare is item.
@@ -190,7 +190,7 @@ class ItemShop(discord.ui.Select):
     
     async def callback(self, interaction : discord.Interaction):
         """
-        Creates embed with item details after choosen from select.
+        Creates embed with item details after being choosen from select.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -213,7 +213,7 @@ class ItemShop(discord.ui.Select):
             new_view = discord.ui.View()
             new_view.add_item(button)
 
-            await interaction.response.send_message(embed=new_embed, view=new_view)
+            await interaction.response.send_message(embed=new_embed, view=new_view, ephemeral=True)
         except discord.Forbidden:
             print(f"Cant open shop! (callback, Shop)")
         except discord.HTTPException:
@@ -223,7 +223,7 @@ class ItemShop(discord.ui.Select):
 
     async def button_callback(self, interaction : discord.Interaction, chosen_item, chosen_label):
         """
-        Handles creating embed when something is bought.
+        Handles creating embed when item is bought.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -240,7 +240,7 @@ class ItemShop(discord.ui.Select):
             member_inv = member_data.get("inventory", {})
 
             if member_coins < chosen_item['cost']:
-                await interaction.response.send_message("**U don't have enough coins!**")
+                await interaction.response.send_message("**U don't have enough coins!**", ephemeral=True)
                 return
             
             if chosen_label == "pet_lootbox":
@@ -254,16 +254,16 @@ class ItemShop(discord.ui.Select):
 
                 if jail_role in interaction.user.roles:
                     await interaction.user.remove_roles(jail_role)
-                    await interaction.response.send_message("U are free!")
+                    await interaction.response.send_message("U are free!", ephemeral=True)
                     await self.deduct_money(interaction, chosen_item)
                 else:
-                    await interaction.response.send_message("U are not in jail!")
+                    await interaction.response.send_message("U are not in jail!", ephemeral=True)
                 return
 
             if chosen_label not in member_inv:
                 await self.add_item_to_user_inv(interaction, chosen_label, chosen_item)
                 await self.deduct_money(interaction, chosen_item)
-                await interaction.response.send_message(f"U bought **{chosen_label}**")
+                await interaction.response.send_message(f"U bought **{chosen_label}**", ephemeral=True)
             else:
                 await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)
         except discord.Forbidden:
@@ -275,7 +275,7 @@ class ItemShop(discord.ui.Select):
 
     async def lootbox(self, interaction : discord.Interaction, member_inv : dict):
         """
-        Gives u random item or coins when u already have that item.
+        Gives user random item or coins when u already have that item.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
@@ -318,7 +318,7 @@ class ItemShop(discord.ui.Select):
 
 async def create_embed(title : str, desc : str, color: discord.Color, footer : str = ""):
     """
-    Creates embed.
+    Creates an embed.
 
     Arguments:
         title (str): Title of the embed
