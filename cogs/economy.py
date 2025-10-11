@@ -6,13 +6,37 @@ from pymongo.errors import PyMongoError
 from datetime import datetime, timedelta, timezone
 
 class Economy(commands.Cog):
+    """
+    Cog responsible for Economy structure, features: checking balance and inventory and handling daily rewards.
+    """
     def __init__(self, bot):
+        """
+        Initializes the Economy cog.
+
+        Arguments:
+            bot: Discord bot instance.
+        """
         self.bot = bot
 
     async def get_database_cog(self):
+        """
+        Returns the Database cog instance.
+
+        Returns:
+            Database cog or None if cog is not loaded.
+        """
         return self.bot.get_cog("Database")
     
     async def get_member(self, discord_Obj):
+        """
+        Retrives guild data from database.
+
+        Arguments:
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
+
+        Returns:
+            dict: Guild member_data dict or None is something went wrong.
+        """
         database_cog = await self.get_database_cog()
         member_data = await database_cog.find_or_create__member(discord_Obj)
         if member_data is None:
@@ -21,6 +45,12 @@ class Economy(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
+        """
+        Listen for any message send, then gives author 1-5 xp.
+
+        Arguments:
+            message (discord.Message): Message that was send in channel.
+        """
 
         if message.author.bot:
             return
@@ -38,16 +68,28 @@ class Economy(commands.Cog):
 
     @app_commands.command(name="balance", description="Check your balance!")
     async def check_bal(self, interaction : discord.Interaction):
+        """
+        Retrives user balance from database.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
         member_data = await self.get_member(interaction)
         if member_data is None:
             return
 
-        balance = member_data.get("coins")
+        balance = member_data.get("coins", 0)
 
         await interaction.response.send_message(f"Your balance: {balance}")
         
     @app_commands.command(name="daily_reward", description="Claim your global daily reward")
     async def daily_reward(self, interaction : discord.Interaction):
+        """
+        Gives user a reward (can be used once in 24h).
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
         member_data = await self.get_member(interaction)
         last_daily = member_data.get("last_daily_reward")
 
@@ -62,6 +104,12 @@ class Economy(commands.Cog):
 
     @app_commands.command(name="inventory", description="Take a look into your inventory")
     async def inventory(self, interaction : discord.Interaction):
+        """
+        Retrives user inventory from database.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
         member_data = await self.get_member(interaction)
 
         inventory = member_data.get("inventory", {})
@@ -86,7 +134,7 @@ async def setup(bot):
     await bot.add_cog(Economy(bot))
 
 # code to change, written by me
-'''
+"""
 async def lootbox(self, interaction : discord.Interaction, member_inv : discord.Member):
 
         colors = ["🟩","🟦", "🟪", "🟨", "🟥", "⬜"]
@@ -135,4 +183,4 @@ async def lootbox(self, interaction : discord.Interaction, member_inv : discord.
                     await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : money}})
                     await interaction.channel.send(f"{interaction.user.mention} just got {money} coins!")
             
-'''
+"""

@@ -7,22 +7,73 @@ from functools import partial
 from asyncio import sleep
 from random import choice, randint
 
-async def create_embed(title : str, desc : str, color: discord.Color, footer : str = ""):
+class Shop(commands.Cog):
+    """
+    Cog responsible for Shop structure and functionality including: setting up shop and buying from it.
+    """
+    def __init__(self, bot):
+        """
+        Initializes the Shop cog and loads items for sale.
 
-    embed = discord.Embed(
-        title=title,
-        description=desc,
-        color=color
-    )
+        Arguments:
+            bot: Discord bot instance.
+        """
+        self.bot = bot
+        with open ("data/shop.json", "r", encoding="utf-8") as shop_file:
+            self.shop_items = json.load(shop_file)
 
-    embed.set_footer(text=footer)
+    @app_commands.command(name="shop", description="Check shop for items")
+    async def shop(self, interaction : discord.Interaction):
+        """
+        Sends embed with shop items into intreaction channel.
 
-    return embed
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
+        try:
+            embed = await create_embed("🏪 Item shop", "*Choose your item!* 🎁", discord.Color.gold(), f"Common - 🟢, rare - 🔵, epic - 🟣, legendary - 🟡")
 
+            for name, item in self.shop_items.items():
+                embed.add_field(
+                    name=f"{item['emote']} **{name.capitalize()}** {item['rare_emote']}",
+                    value=f"💰 {item['cost']} coins",
+                    inline=True
+                )
+    
+            view = ShopView(self.shop_items, self.bot)
+
+            await interaction.response.send_message(embed=embed, view=view)
+        except discord.Forbidden:
+            print(f"Cant open shop! (shop command, Shop)")
+        except discord.HTTPException:
+            print("Something happend on line discord API - discord Bot, (shop command, Shop)")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+
+class ShopView(discord.ui.View):
+    """
+    Class responsible for merging embed and view together.
+    """
+    def __init__(self, shop_items : dict, bot):
+        """
+        Initializes class, sets timeout and add select with items to shop embed.
+
+        Arguments:
+            bot: Discord bot instance.
+        """
+        super().__init__(timeout=60)
+        self.bot = bot
+        self.add_item(ItemShop(shop_items, bot))
 
 class ItemShop(discord.ui.Select):
+    """
+    Class resposible for creating select for shop embed, creating specifics items embeds and handling buying items + unjail.
+    """
     def __init__(self, shop_items: dict, bot):
-
+        """
+        Initializes class and generates select for Shop embed.
+        """
         self.bot = bot
 
         self.items = shop_items
@@ -32,9 +83,24 @@ class ItemShop(discord.ui.Select):
         super().__init__(placeholder="Choose your item!", min_values=1, max_values=1, options=options)
 
     async def get_database_cog(self):
+        """
+        Returns the Database cog instance.
+
+        Returns:
+            Database cog or None if cog is not loaded.
+        """
         return self.bot.get_cog("Database")
     
     async def get_member(self, discord_Obj):
+        """
+        Retrives guild data from database.
+
+        Arguments:
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
+
+        Returns:
+            dict: Guild member_data dict or None is something went wrong.
+        """
         database_cog = await self.get_database_cog()
         member_data = await database_cog.find_or_create__member(discord_Obj)
         if member_data is None:
@@ -42,6 +108,15 @@ class ItemShop(discord.ui.Select):
         return member_data
     
     async def get_jail_role(self, interaction : discord.Interaction):
+        """
+        Retrives jail role from database.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+
+        Returns:
+            jail_role (discord.Role): Jail role.
+        """
         try:
             guild_data = await self.bot.database["guilds"].find_one({"_id" : str(interaction.guild_id)})
 
@@ -63,6 +138,12 @@ class ItemShop(discord.ui.Select):
             print(f"Unexpected error: {e}")
     
     async def deduct_money(self, interaction : discord.Interaction, item):
+        """
+        Deducts money from user.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
         try:
             await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : item['cost'] * -1}})
         except PyMongoError as e:
@@ -75,6 +156,9 @@ class ItemShop(discord.ui.Select):
             print(f"PyMongoError {e}")
 
     async def tier_picker(self):
+        """
+        Picks tier for item lootbox.
+        """
         x = randint(1, 1000)
 
         if x <= 650:
@@ -87,6 +171,12 @@ class ItemShop(discord.ui.Select):
             return "legendary"
         
     async def color_picker(self, rarity : str):
+        """
+        Picks color for embed with item details.
+
+        Arguments:
+            rarity (str): How rare is item.
+        """
         if rarity == "common":
             return discord.Color.green()
         elif rarity == "rare":
@@ -98,43 +188,48 @@ class ItemShop(discord.ui.Select):
         else:
             return discord.Color.red()
     
-    async def lootbox(self, interaction : discord.Interaction, member_inv : dict):
+    async def callback(self, interaction : discord.Interaction):
+        """
+        Creates embed with item details after choosen from select.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
+        chosen_label = self.values[0]
+
+        if chosen_label not in self.items:
+            return
         try:
-            tier = await self.tier_picker()
+            chosen_item = self.items[chosen_label]
 
-            if not self.items:
-                return
+            color = await self.color_picker(chosen_item['rarity'])
 
-            items_in_tier = [{name : rest} for name, rest in self.items.items() if rest['rarity'] == tier]
+            new_embed = await create_embed(f"{chosen_item['emote']} **{chosen_label.capitalize()}**", f"*{chosen_item['desc']}*", color, f"Remember {chosen_label.capitalize()} costs {chosen_item['cost']} coins!!")
 
-            if not items_in_tier:
-                return
+            button = discord.ui.Button(label="BUY", style=discord.ButtonStyle.primary)
 
-            picked = choice(items_in_tier)
-            key = next(iter(picked))
+            button.callback = partial(self.button_callback, chosen_item=chosen_item, chosen_label=chosen_label)
 
-            if key not in member_inv:
-                await self.add_item_to_user_inv(interaction, key, picked[key])
-                message = f"{interaction.user.name} just dropped {picked[key]['emote']} **{key.capitalize()}**"
-            else:
-                how_much = randint(45, 125)
-                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : how_much}})
-                message = f"{interaction.user.name} dropped {how_much} coins because he/she has {picked[key]['emote']} **{key.capitalize()}**"
+            new_view = discord.ui.View()
+            new_view.add_item(button)
 
-            new_embed = await create_embed(message, f"*Congratulations!*", discord.Color.red())
-
-            await interaction.response.send_message(embed=new_embed)
-            await interaction.channel.send(interaction.user.mention)
+            await interaction.response.send_message(embed=new_embed, view=new_view)
         except discord.Forbidden:
-            print(f"Cant open shop! (callback, ItemShop)")
+            print(f"Cant open shop! (callback, Shop)")
         except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (callback, ItemShop)")
-        except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            print("Something happend on line discord API - discord Bot, (callback, Shop)")
         except Exception as e:
             print(f"Unexpected error: {e}")
 
     async def button_callback(self, interaction : discord.Interaction, chosen_item, chosen_label):
+        """
+        Handles creating embed when something is bought.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            chosen_item: Key of the dict.
+            choasen_label: Value of the dict.
+        """
         try:
             member_data = await self.get_member(interaction)
 
@@ -178,66 +273,69 @@ class ItemShop(discord.ui.Select):
         except Exception as e:
             print(f"Unexpected error: {e}")
 
-    async def callback(self, interaction : discord.Interaction):
-        chosen_label = self.values[0]
+    async def lootbox(self, interaction : discord.Interaction, member_inv : dict):
+        """
+        Gives u random item or coins when u already have that item.
 
-        if chosen_label not in self.items:
-            return
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            member_inv (dict): Member inventory.
+        """
         try:
-            chosen_item = self.items[chosen_label]
+            tier = await self.tier_picker()
 
-            color = await self.color_picker(chosen_item['rarity'])
+            if not self.items:
+                return
 
-            new_embed = await create_embed(f"{chosen_item['emote']} **{chosen_label.capitalize()}**", f"*{chosen_item['desc']}*", color, f"Remember {chosen_label.capitalize()} costs {chosen_item['cost']} coins!!")
+            items_in_tier = [{name : rest} for name, rest in self.items.items() if rest['rarity'] == tier]
 
-            button = discord.ui.Button(label="BUY", style=discord.ButtonStyle.primary)
+            if not items_in_tier:
+                return
 
-            button.callback = partial(self.button_callback, chosen_item=chosen_item, chosen_label=chosen_label)
+            picked = choice(items_in_tier)
+            key = next(iter(picked))
 
-            new_view = discord.ui.View()
-            new_view.add_item(button)
+            if key not in member_inv:
+                await self.add_item_to_user_inv(interaction, key, picked[key])
+                message = f"{interaction.user.name} just dropped {picked[key]['emote']} **{key.capitalize()}**"
+            else:
+                how_much = randint(45, 125)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : how_much}})
+                message = f"{interaction.user.name} dropped {how_much} coins because he/she has {picked[key]['emote']} **{key.capitalize()}**"
 
-            await interaction.response.send_message(embed=new_embed, view=new_view)
+            new_embed = await create_embed(message, f"*Congratulations!*", discord.Color.red())
+
+            await interaction.response.send_message(embed=new_embed)
+            await interaction.channel.send(interaction.user.mention)
         except discord.Forbidden:
-            print(f"Cant open shop! (callback, Shop)")
+            print(f"Cant open shop! (callback, ItemShop)")
         except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (callback, Shop)")
+            print("Something happend on line discord API - discord Bot, (callback, ItemShop)")
+        except PyMongoError as e:
+            print(f"PyMongoError: {e}")
         except Exception as e:
             print(f"Unexpected error: {e}")
 
-class ShopView(discord.ui.View):
-    def __init__(self, shop_items : dict, bot):
-        super().__init__(timeout=60)
-        self.bot = bot
-        self.add_item(ItemShop(shop_items, bot))
+async def create_embed(title : str, desc : str, color: discord.Color, footer : str = ""):
+    """
+    Creates embed.
 
-class Shop(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        with open ("data/shop.json", "r", encoding="utf-8") as shop_file:
-            self.shop_items = json.load(shop_file)
+    Arguments:
+        title (str): Title of the embed
+        desc (str): Description of the embed
+        color (discord.Color): Color chosen for embed
+        footer (str): Footer of the embed, if not given footer will be empty  
+    """
 
-    @app_commands.command(name="shop", description="Check shop for items")
-    async def shop(self, interaction : discord.Interaction):
-        try:
-            embed = await create_embed("🏪 Item shop", "*Choose your item!* 🎁", discord.Color.gold(), f"Common - 🟢, rare - 🔵, epic - 🟣, legendary - 🟡")
+    embed = discord.Embed(
+        title=title,
+        description=desc,
+        color=color
+    )
 
-            for name, item in self.shop_items.items():
-                embed.add_field(
-                    name=f"{item['emote']} **{name.capitalize()}** {item['rare_emote']}",
-                    value=f"💰 {item['cost']} coins",
-                    inline=True
-                )
-    
-            view = ShopView(self.shop_items, self.bot)
+    embed.set_footer(text=footer)
 
-            await interaction.response.send_message(embed=embed, view=view)
-        except discord.Forbidden:
-            print(f"Cant open shop! (shop command, Shop)")
-        except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (shop command, Shop)")
-        except Exception as e:
-            print(f"Unexpected error: {e}")
+    return embed
 
 async def setup(bot):
     await bot.add_cog(Shop(bot))
