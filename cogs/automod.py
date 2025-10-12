@@ -132,6 +132,9 @@ class Automod(commands.Cog):
         except discord.HTTPException:
             print("Something happend on line discord API - discord Bot, (create_jail_utilities, Automod)")
             return None
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return
 
     async def get_database_cog(self):
         """
@@ -371,6 +374,7 @@ class Automod(commands.Cog):
 
                     await interaction.followup.send("Jail has been created", ephemeral=True)
         else:
+            await interaction.response.send_message("Jail is set!")
             return
 
     @app_commands.command(name = "jail", description = "Send to jail or let them out")
@@ -435,6 +439,8 @@ class Automod(commands.Cog):
             print("Can't ban member, (ban, Automod)")
         except discord.HTTPException:
             print("Something happend on line discord API - discord Bot, (ban, Automod)")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
     @app_commands.command(name="timeout", description = "Timeout user")
     @app_commands.describe(member = "Person to timeout", time = "How much time? (in minutes)")
@@ -466,6 +472,8 @@ class Automod(commands.Cog):
             print("Can't timeout member, (timeout, Automod)")
         except discord.HTTPException:
             print("Something happend on line discord API - discord Bot, (timeout, Automod)")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
     @app_commands.command(name="add_to_bad_words", description="Adds word to banned words in guild")
     @app_commands.describe(bad_word="Bad word that will be banned from this guild")
@@ -512,7 +520,6 @@ class Automod(commands.Cog):
             await interaction.followup.send(f"{bad_word} has been {action}")
         except PyMongoError as e:
             print(f"PyMongoError: {e}")
-            await interaction.followup.send("Something went wrong while updating the database.", ephemeral=True)
             return None
         
     @app_commands.command(name="check_messages_for_bad_words", description="Enable/disable checking every message for potential bad words")
