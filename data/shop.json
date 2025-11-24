@@ -7,7 +7,9 @@
         "desc" : "A legendary dragons is the toughest fighter",
         "rare_emote" : ":yellow_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "doggo": {
         "emote": "🦮",
@@ -17,7 +19,9 @@
         "desc" : "Doggo gives you xp boost",
         "rare_emote" : ":blue_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "kitty": {
         "emote": "🐈",
@@ -27,7 +31,9 @@
         "desc" : "Kitty levels faster than other pets",
         "rare_emote" : ":green_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "unicorn": {
         "emote": "🦄",
@@ -37,7 +43,9 @@
         "desc" : "U have 10% chance for spongebob gif as a followback to your message",
         "rare_emote" : ":purple_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "squid": {
         "emote": "🦑",
@@ -47,7 +55,9 @@
         "desc" : "Gives u bonus for every illegal income",
         "rare_emote" : ":blue_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "parrot": {
         "emote": "🦜",
@@ -57,7 +67,9 @@
         "desc" : "Parrot repeats your every sentence",
         "rare_emote" : ":green_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "rat": {
         "emote": "🐀",
@@ -67,7 +79,9 @@
         "desc" : "Gives u bonus for every legal income",
         "rare_emote" : ":purple_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "ghost": {
         "emote": "👻",
@@ -77,7 +91,9 @@
         "desc" : "Boosts your chances in lootboxes",
         "rare_emote" : ":blue_circle:",
         "level" : 1,
-        "xp" : 0
+        "xp" : 0,
+        "def" : 50,
+        "atk" : 50
     },
     "unjail" : {
         "emote" : "⛓️",
@@ -87,7 +103,9 @@
         "desc" : "Bail yourself from jail",
         "rare_emote" : ":customs:",
         "level" : "null",
-        "xp" : "null"
+        "xp" : "null",
+        "def" : "null",
+        "atk" : "null"
     },
     "pet_lootbox" : {
          "emote" : "🎀",
@@ -97,6 +115,8 @@
         "desc" : "Test your luck and maybe get your new companion",
         "rare_emote" : "🎀",
         "level" : "null",
-        "xp"  : "null"
+        "xp"  : "null",
+        "def" : "null",
+        "atk" : "null"
     }
 }

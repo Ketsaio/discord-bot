@@ -55,12 +55,16 @@ class Economy(commands.Cog):
         if message.author.bot:
             return
         try:
-            added_xp = randint(1,5)
             member_data = await self.get_member(message.author)
+            if member_data.get("active_pet", 0) == "doggo":
+                added_xp = randint(3,8)
+            else:
+                added_xp = randint(1,5)
             await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : added_xp}})
             member_data = await self.get_member(message.author)
             xp = member_data.get("xp")
-            if xp >= 10:
+            level = member_data.get("level")
+            if xp >= 8 * level:
                 await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : -10,"level" : 1}})
         except PyMongoError as e:
             print(f"PyMongoError: {e}")

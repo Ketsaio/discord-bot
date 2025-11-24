@@ -155,20 +155,31 @@ class ItemShop(discord.ui.Select):
         except PyMongoError as e:
             print(f"PyMongoError {e}")
 
-    async def tier_picker(self):
+    async def tier_picker(self, interaction):
         """
         Picks tier for item lootbox.
         """
         x = randint(1, 1000)
 
-        if x <= 650:
-            return "common"
-        elif x > 650 and x <= 800:
-            return "rare"
-        elif x > 800 and x <= 999:
-            return "epic"
+        member_data = await self.get_member(interaction)
+        if member_data.get("current_pet", 0) == "ghost":
+            if x <= 500:
+                return "common"
+            elif x > 500 and x <= 750:
+                return "rare"
+            elif x > 750 and x <= 950:
+                return "epic"
+            else:
+                return "legendary"
         else:
-            return "legendary"
+            if x <= 650:
+                return "common"
+            elif x > 650 and x <= 800:
+                return "rare"
+            elif x > 800 and x <= 999:
+                return "epic"
+            else:
+                return "legendary"
         
     async def color_picker(self, rarity : str):
         """
@@ -282,7 +293,7 @@ class ItemShop(discord.ui.Select):
             member_inv (dict): Member inventory.
         """
         try:
-            tier = await self.tier_picker()
+            tier = await self.tier_picker(interaction)
 
             if not self.items:
                 return
