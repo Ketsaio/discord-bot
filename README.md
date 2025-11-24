@@ -28,9 +28,8 @@
   - [ ] Auto moderation  
   - [ ] Economy system  
   - [ ] Gambling mini games  
-  - [ ] Polls  
-  - [ ] Tickets  
   - [ ] Global levels system
+  - [ ] Pets
 
 
 • Usage:
