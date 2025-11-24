@@ -29,6 +29,7 @@
   - [ ] Economy system  
   - [ ] Gambling mini games  
   - [ ] Global levels system
+  - [ ] Pets
 
 
 • Usage:
