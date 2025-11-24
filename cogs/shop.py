@@ -158,6 +158,7 @@ class ItemShop(discord.ui.Select):
     async def tier_picker(self, interaction):
         """
         Picks tier for item lootbox.
+        If user active pet is ghost, chances of dropping better pets are higher.
         """
         x = randint(1, 1000)
 

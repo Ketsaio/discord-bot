@@ -47,6 +47,7 @@ class Economy(commands.Cog):
     async def on_message(self, message : discord.Message):
         """
         Listens for any message send, then gives author 1-5 xp.
+        If user active pet is doggo then user recives bounus xp.
 
         Arguments:
             message (discord.Message): Message that was send in channel.
