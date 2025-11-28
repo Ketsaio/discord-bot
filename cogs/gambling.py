@@ -9,20 +9,30 @@ from pymongo.errors import PyMongoError
 
 
 class Gambling(commands.Cog):
+    '''
+    Cog responsible for simulating gambling and illegal activities like: slots, roulette,
+    scratches, crimes and stealing.
+    '''
     def __init__(self, bot):
+        '''
+        Initializes the Gambling cog.
+
+        Arguments:
+            bot: Discord bot instance.
+        '''
         self.bot = bot
 
     async def get_database_cog(self):
-        """
+        '''
         Returns the Database cog instance.
 
         Returns:
             Database cog or None if cog is not loaded.
-        """
+        '''
         return self.bot.get_cog("Database")
     
     async def get_member(self, discord_Obj):
-        """
+        '''
         Retrieves guild data from database.
 
         Arguments:
@@ -30,7 +40,7 @@ class Gambling(commands.Cog):
 
         Returns:
             dict: Guild member_data dict or None is something went wrong.
-        """
+        '''
         database_cog = await self.get_database_cog()
         member_data = await database_cog.find_or_create__member(discord_Obj)
         if member_data is None:
@@ -40,6 +50,13 @@ class Gambling(commands.Cog):
     @app_commands.command(name = "slots", description="Gamble your money on slots")
     @app_commands.describe(amount = "Amount of money u want to gamble")
     async def automats(self, interaction : discord.Interaction, amount : int):
+        '''
+        Simulates gambling game: "slots".
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            amount (int): Amount of money users used to gamble.
+        '''
         member_data = await self.get_member(interaction)
         money = member_data.get("coins", 0)
         active_pet = member_data.get("active_pet")
@@ -109,6 +126,12 @@ class Gambling(commands.Cog):
 
     @app_commands.command(name="scratches", description="Scratch your way to glory! 12$")
     async def scratches(self, interaction: discord.Interaction):
+        '''
+        Simulates gambling game: "scratches".
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+        '''
         member_data = await self.get_member(interaction)
         money = member_data.get("coins", 0)
         active_pet = member_data.get("active_pet")
@@ -155,6 +178,15 @@ class Gambling(commands.Cog):
     @app_commands.command(name="roulette", description="Win some money!")
     @app_commands.describe(amount="Amount of money to gamble", color="Pick color", number="Pick number")
     async def roulette(self, interaction: discord.Interaction, amount: int, color: str = None, number: int = None):
+        '''
+        Simulates gambling game: "roulette".
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            amount (int): Amount of money users used to gamble.
+            color (str): Roulette pocket color.
+            number (int): Roulette pocket number.
+        '''
         member_data = await self.get_member(interaction)
         active_pet = member_data.get("active_pet")
 
@@ -219,6 +251,12 @@ class Gambling(commands.Cog):
 
     @app_commands.command(name = "crime", description = "go do a crime")
     async def crime(self, interaction : discord.Interaction):
+        '''
+        Simulates doing a illegal activity.
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+        '''
         member_data = await self.get_member(interaction)
         active_pet = member_data.get("active_pet")
         if not member_data:
@@ -274,7 +312,13 @@ class Gambling(commands.Cog):
     @app_commands.command(name = "steal", description = "rob someone")
     @app_commands.describe(member = "discord member")
     async def steal(self, interaction : discord.Interaction, member : discord.Member):
+        '''
+        Simulates robbing someone.
 
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            member (discord.Member): Member user trying to steal from.
+        '''
         robber = await self.get_member(interaction)
         getting_robbed = await self.get_member(member)
         active_robber_pet = robber.get("active_pet")
@@ -339,17 +383,38 @@ class Gambling(commands.Cog):
             print(f"PyMongo error in crime: {MongoE}")
 
     async def time_left(self, last_smth : datetime, hours : int):
+            '''
+            Handling countdowns.
+
+            Arguments:
+                last_smth (datetime): Last command usage.
+                hours (int): How many hours cooldown is.
+            '''
             remaining = timedelta(hours=hours) - (datetime.now() - last_smth)
             hours, remainder = divmod(remaining.seconds, 3600)
             minutes = remainder // 60
             return hours, minutes
     
     async def rat_pet_activity(self, pet : str, win : int): # legal incomes
+        '''
+        Apply a pet bonus.
+
+        Arguments:
+            pet (str): Users active pet.
+            win (int): Amount of money to multiply.
+        '''
         if pet == "rat":
             return win * 1.25
         return win
     
     async def squid_pet_activity(self, pet : str, win : int): # illegal incomes
+        '''
+        Apply a pet bonus.
+
+        Arguments:
+            pet (str): Users active pet.
+            win (int): Amount of money to multiply.
+        '''
         if pet == "squid":
             return win * 1.3
         return win
