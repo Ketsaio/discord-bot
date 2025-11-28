@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from random import randint, choice
 from asyncio import sleep
+from datetime import datetime, timedelta
 
 
 class Gambling(commands.Cog):
@@ -176,6 +177,107 @@ class Gambling(commands.Cog):
             )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+    @app_commands.command(name = "crime", description = "go do a crime")
+    async def crime(self, interaction : discord.Interaction):
+        member_data = await self.get_member(interaction)
+
+        if not member_data:
+            return
         
+        last_crime = member_data.get("cooldowns", {}).get("last_crime")
+
+        if last_crime is None or datetime.now() - last_crime >= timedelta(hours=3):
+            chance = randint(1,10)
+            if chance <= 6:
+                money_from_crime = randint(50, 150)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
+                    "coins" : money_from_crime}})
+                
+                embed = Embed(
+                    title="💸 You commited a crime!",
+                    description=f"U have a {money_from_crime} more illegal coins!",
+                    color=Colour.green()
+                )
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+            else:
+                bail = randint(75, 125)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
+                    "coins" : -bail}})
+                
+                embed = Embed(
+                    title="⛓️ You got caught...",
+                    description=f"U have to pay {bail} for bail",
+                    color=Colour.red()
+                )
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif datetime.now() - last_crime < timedelta(hours=3):
+            embed = Embed(
+                title="⏰ MORE TIME",
+                description=f"U need to wait {abs(datetime.now().hour - last_crime.hour)} hours and {abs(datetime.now().minute - last_crime.minute)} to steal from someone again!",
+                color=Colour.red()
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name = "steal", description = "rob someone")
+    @app_commands.describe(member = "discord member")
+    async def steal(self, interaction : discord.Interaction, member : discord.Member):
+        
+        # tutaj zabezpieczenie
+
+        robber = await self.get_member(interaction)
+        getting_robbed = await self.get_member(member)
+
+        if not robber and not getting_robbed:
+            return
+
+        getting_robbed_money = getting_robbed.get("coins", 0)
+        last_steal = robber.get("cooldowns", {}).get("last_steal")
+
+        if last_steal is None or datetime.now() - last_steal >= timedelta(hours=6):
+            chance = randint(1,10)
+            if chance >= 8:
+                how_much = randint(1,5)
+                how_much /= 10
+                stolen = getting_robbed_money * how_much
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {"coins" : getting_robbed_money * stolen}})
+                await self.bot.database["users"].update_one({"_id" : str(member.id)}, {"$inc" : {"coins" : -stolen}})
+
+                embed = Embed(
+                    title="🥷 Succesful robbery!",
+                    description=f"{interaction.user.mention} just robbed {int(stolen)} from {member.mention}!",
+                    color=Colour.green()
+                )
+
+                await interaction.response.send_message(embed=embed)
+            else:
+                bail = randint(75, 125)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
+                    "coins" : -bail}})
+                
+                embed = Embed(
+                    title="⛓️ You got caught...",
+                    description=f"U have to pay {bail} for bail",
+                    color=Colour.red()
+                )
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        elif datetime.now() - last_steal < timedelta(hours=6):
+
+            embed = Embed(
+                title="⏰ MORE TIME",
+                description=f"U need to wait {abs(datetime.now().hour - last_steal.hour)} hours and {abs(datetime.now().minute - last_steal.minute)} to steal from someone again!",
+                color=Colour.red()
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
 async def setup(bot):
     await bot.add_cog(Gambling(bot))

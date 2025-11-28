@@ -176,7 +176,11 @@ class Database(commands.Cog):
                 "coins" : 0,
                 "xp" :  0,
                 "level" : 1,
-                "last_daily_reward" : None,
+                "cooldowns" : {
+                    "last_daily_reward" : None,
+                    "last_crime" : None,
+                    "last_steal" : None
+                },
                 "level_up_notification" : True,
                 "inventory" : {},
                 "active_pet" : None

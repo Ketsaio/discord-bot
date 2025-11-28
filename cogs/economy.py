@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from random import randint
 from pymongo.errors import PyMongoError
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 class Economy(commands.Cog):
     """
@@ -96,11 +96,11 @@ class Economy(commands.Cog):
             interaction (discord.Interaction): Context interaction.
         """
         member_data = await self.get_member(interaction)
-        last_daily = member_data.get("last_daily_reward")
+        last_daily = member_data.get("cooldowns", {}).get("last_daily_reward")
 
         try:
             if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
-                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
+                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"cooldowns.last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
                 await interaction.response.send_message("U claimed your daily! Come back in 24h")
             elif datetime.now() - last_daily < timedelta(hours=24):
                 await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
