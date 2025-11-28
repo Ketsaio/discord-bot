@@ -37,7 +37,7 @@ class Gambling(commands.Cog):
             return None
         return member_data
     
-    @app_commands.command(name = "automat", description="Gamble your money on automats")
+    @app_commands.command(name = "slots", description="Gamble your money on slots")
     @app_commands.describe(amount = "Amount of money u want to gamble")
     async def automats(self, interaction : discord.Interaction, amount : int):
         member_data = await self.get_member(interaction)
@@ -48,8 +48,8 @@ class Gambling(commands.Cog):
             await interaction.response.send_message("U dont have enought money!", ephemeral=True)
             return
         
-        if amount <= 0:
-            await interaction.response.send_message("Please select a positive number of coins!", ephemeral=True)
+        if amount <= 0 or amount >= 1000000:
+            await interaction.response.send_message("Please select 1-1000000 coins!", ephemeral=True)
             return
 
         try:
@@ -167,15 +167,13 @@ class Gambling(commands.Cog):
             await interaction.response.send_message("Please select 1-1000000 coins!", ephemeral=True)
             return
         
-        if number < 0 or number > 36:
-            await interaction.response.send_message("Please select number from 1-36")
-
         if color is None:
             color = choice(["red", "black", "green"])
 
-        if number is None:
-            number = randint(0, 36)
-
+        if number is not None:
+            if number < 0 or number > 36:
+                await interaction.response.send_message("Please select number from 1-36", ephemeral=True)
+                return
 
         try:
             await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": -amount}})
@@ -263,7 +261,7 @@ class Gambling(commands.Cog):
 
                 embed = Embed(
                     title="⏰ MORE TIME",
-                    description=f"U need to wait {hours} hours and {minutes} to steal from someone again!",
+                    description=f"U need to wait {hours} hours and {minutes} to commit a crime again!",
                     color=Colour.orange()
                 )
 
