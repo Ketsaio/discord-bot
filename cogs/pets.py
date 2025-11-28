@@ -5,6 +5,7 @@ from random import randint, choice
 import aiohttp
 from os import getenv
 from dotenv import load_dotenv
+from pymongo.errors import PyMongoError
 
 class Pets(commands.Cog):
     def __init__(self, bot):
@@ -21,26 +22,29 @@ class Pets(commands.Cog):
         return member_data or {}
 
     async def unicorn(self, message : discord.Message):
-        chance = randint(1,10)
-        if chance >= 9:
-            query = "spongebob"
-            url = f"https://tenor.googleapis.com/v2/search?q={query}&key={self.tenor}&limit=30"
+        try:
+            chance = randint(1,10)
+            if chance >= 9:
+                query = "spongebob"
+                url = f"https://tenor.googleapis.com/v2/search?q={query}&key={self.tenor}&limit=30"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    data = await response.json()
-                if "results" in data and len(data["results"]) > 0:
-                    result = choice(data["results"])
-                    gif_url = result["media_formats"]["gif"]["url"]
-                    embed = discord.Embed(
-                        title="🦄 Unicorn activated!",
-                        description=f"Here's your gif:",
-                        color=discord.Colour.purple()
-                    )
-                    embed.set_image(url=gif_url)
-                    await message.channel.send(embed=embed)
-        
-        await self.add_pet_xp(randint(1,5), message)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as response:
+                        data = await response.json()
+                    if "results" in data and len(data["results"]) > 0:
+                        result = choice(data["results"])
+                        gif_url = result["media_formats"]["gif"]["url"]
+                        embed = discord.Embed(
+                            title="🦄 Unicorn activated!",
+                            description=f"Here's your gif:",
+                            color=discord.Colour.purple()
+                        )
+                        embed.set_image(url=gif_url)
+                        await message.channel.send(embed=embed)
+            
+            await self.add_pet_xp(randint(1,5), message)
+        except aiohttp.ClientConnectionError as e:
+            print(f"aiohttp error in unicorn: {e}")
 
     async def parrot(self, message : discord.Message):
         to_repeat = message.content
@@ -76,38 +80,43 @@ class Pets(commands.Cog):
         defence, attack = 3, 5
         if current_pet == "dragon":
             defence, attack = 8, 12
-
-        await self.bot.database["users"].update_one(
-            {"_id" : str(message.author.id)}, 
-            {"$inc" : {f"inventory.{current_pet}.xp" : int(xp)}}
-        )
-
-        member_data = await self.get_member(message.author)
-        current_xp = member_data.get("inventory", {}).get(current_pet, {}).get("xp", 0)
-        level = member_data.get("inventory", {}).get(current_pet, {}).get("level", 0)
-
-        if current_xp >= (20 * level):
+        try:
             await self.bot.database["users"].update_one(
-                {"_id" : str(message.author.id)},
-                {"$set" : {f"inventory.{current_pet}.xp" : 0},
-                 "$inc" : {f"inventory.{current_pet}.level" : 1,
-                           f"inventory.{current_pet}.def" : defence,
-                           f"inventory.{current_pet}.atk" : attack}}
+                {"_id" : str(message.author.id)}, 
+                {"$inc" : {f"inventory.{current_pet}.xp" : int(xp)}}
             )
-            embed = discord.Embed(
-                title="🎉 Level Up!",
-                description=f"Your **{current_pet}** leveled up to **{level+1}**!",
-                color=discord.Colour.green()
-            )
-            await message.channel.send(embed=embed)
+
+            member_data = await self.get_member(message.author)
+            current_xp = member_data.get("inventory", {}).get(current_pet, {}).get("xp", 0)
+            level = member_data.get("inventory", {}).get(current_pet, {}).get("level", 0)
+
+            if current_xp >= (20 * level):
+                await self.bot.database["users"].update_one(
+                    {"_id" : str(message.author.id)},
+                    {"$set" : {f"inventory.{current_pet}.xp" : 0},
+                    "$inc" : {f"inventory.{current_pet}.level" : 1,
+                            f"inventory.{current_pet}.def" : defence,
+                            f"inventory.{current_pet}.atk" : attack}}
+                )
+                embed = discord.Embed(
+                    title="🎉 Level Up!",
+                    description=f"Your **{current_pet}** leveled up to **{level+1}**!",
+                    color=discord.Colour.green()
+                )
+                await message.channel.send(embed=embed)
+        except PyMongoError as e:
+            print(f"PyMongo error in add_pet_xp: {e}")
 
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
         if message.author.bot or not message.guild:
             return
-        member_data = await self.get_member(message.author)
-        active_pet = member_data.get("active_pet", 0)
-        await self.pet_selector(active_pet, message)
+        try:
+            member_data = await self.get_member(message.author)
+            active_pet = member_data.get("active_pet", 0)
+            await self.pet_selector(active_pet, message)
+        except Exception as e:
+            print(f"on_message error: {e}")
 
     @app_commands.command(name="change_pet", description="Choose pet to level and fight for you!")
     @app_commands.describe(pet_name="Name of the pet you chose!")
@@ -123,11 +132,13 @@ class Pets(commands.Cog):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-
-        await self.bot.database["users"].update_one(
-            {"_id" : str(interaction.user.id)},
-            {"$set" : {"active_pet" : pet_name}}
-        )
+        try:
+            await self.bot.database["users"].update_one(
+                {"_id" : str(interaction.user.id)},
+                {"$set" : {"active_pet" : pet_name}}
+            )
+        except PyMongoError as e:
+            print(f"PyMongo error: {e}")
         embed = discord.Embed(
             title="✅ Active Pet Changed",
             description=f"Your active pet is now **{pet_name}**",
