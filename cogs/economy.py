@@ -102,8 +102,12 @@ class Economy(commands.Cog):
             if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
                 await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"cooldowns.last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
                 await interaction.response.send_message("U claimed your daily! Come back in 24h")
+                
             elif datetime.now() - last_daily < timedelta(hours=24):
-                await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {abs(datetime.now().hour - last_daily.hour)} godzin i {abs(datetime.now().minute - last_daily.minute)} minut")
+
+                hours, minutes = await self.time_left(last_daily)
+
+                await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {hours} godzin i {minutes} minut")
         except PyMongoError as e:
             print(f"PyMongoError: {e}")
 
@@ -133,6 +137,13 @@ class Economy(commands.Cog):
             )
 
         await interaction.response.send_message(embed=embed)
+
+
+    async def time_left(self, last_smth : datetime):
+        remaining = timedelta(hours=6) - (datetime.now() - last_smth)
+        hours, remainder = divmod(remaining.seconds, 3600)
+        minutes = remainder // 60
+        return hours, minutes 
 
 
 async def setup(bot):
