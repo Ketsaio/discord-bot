@@ -8,20 +8,53 @@ from dotenv import load_dotenv
 from pymongo.errors import PyMongoError
 
 class Pets(commands.Cog):
+    '''
+    Cog responsible for handling pets bonuses.
+    '''
     def __init__(self, bot):
+        '''
+        Initializes the Pets cog and loads enviorment variables.
+        
+        Arguments:
+            bot: Discord bot instance.
+            tenor: API Key.
+        '''
         self.bot = bot
         load_dotenv()
         self.tenor = getenv("TENOR")
 
     async def get_database_cog(self):
+        '''
+        Returns the Database cog instance.
+
+        Returns:
+            Database cog or None if cog is not loaded.
+        '''
         return self.bot.get_cog("Database")
     
     async def get_member(self, discord_Obj):
+        '''
+        Retrieves guild data from database.
+
+        Arguments:
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
+
+        Returns:
+            dict: Guild member_data dict or None is something went wrong.
+        '''
         database_cog = await self.get_database_cog()
         member_data = await database_cog.find_or_create__member(discord_Obj)
-        return member_data or {}
+        if member_data is None:
+            return None
+        return member_data
 
     async def unicorn(self, message : discord.Message):
+        '''
+        Sends spongebob gif after a message with unicorn equipped.
+
+        Arguments:
+            message (discord.Message): Message for following up with gif.
+        '''
         try:
             chance = randint(1,10)
             if chance >= 9:
@@ -47,6 +80,12 @@ class Pets(commands.Cog):
             print(f"aiohttp error in unicorn: {e}")
 
     async def parrot(self, message : discord.Message):
+        '''
+        Repeats everything the user wrote.
+
+        Arguments:
+            message (discord.Message): Message to repeat.
+        '''
         to_repeat = message.content
         embed = discord.Embed(
             title="🦜 Parrot says:",
@@ -56,7 +95,14 @@ class Pets(commands.Cog):
         await message.channel.send(embed=embed)
         await self.add_pet_xp(randint(1,5), message)
 
-    async def pet_selector(self, pet, message):
+    async def pet_selector(self, pet : str, message : discord.Message):
+        '''
+        Selector for pet bonuses.
+
+        Arguments:
+            pet (str): Current active pet.
+            message (discord.Message): Message needed for data processing.
+        '''
         if pet == "kitty":
             await self.add_pet_xp(randint(1,10), message)
         elif pet == "unicorn":
@@ -69,10 +115,26 @@ class Pets(commands.Cog):
             await self.add_pet_xp(randint(1,5), message)
 
     async def get_current_pet(self, message : discord.Message):
+        '''
+        Retrives users active pet.
+
+        Arguments:
+            message (discord.Message): Message for data processing.
+
+        Returns:
+            active_pet (str): Users active pet.
+        '''
         member_data = await self.get_member(message.author)
         return member_data.get("active_pet", None)
 
     async def add_pet_xp(self, xp : int, message : discord.Message):
+        '''
+        Gives pet xp.
+
+        Arguments:
+            xp (int): How much xp to add.
+            message (discord.Message): Message for data processing.
+        '''
         current_pet = await self.get_current_pet(message)
         if not current_pet:
             return
@@ -109,6 +171,12 @@ class Pets(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
+        '''
+        Listen for messages, pet xp related.
+
+        Arguments:
+            message (discord.Message): Message for data processing.
+        '''
         if message.author.bot or not message.guild:
             return
         try:
@@ -121,6 +189,13 @@ class Pets(commands.Cog):
     @app_commands.command(name="change_pet", description="Choose pet to level and fight for you!")
     @app_commands.describe(pet_name="Name of the pet you chose!")
     async def choose_active_pet(self, interaction : discord.Interaction, pet_name : str):
+        '''
+        Change users active pet.
+
+        Arguments:
+            intreaction (discord.Interaction): The interaction context.
+            pet_name (str): Name of the selected pet.
+        '''
         member_data = await self.get_member(interaction)
         pets = member_data.get("inventory", {})
 
