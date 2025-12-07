@@ -8,7 +8,16 @@ from datetime import datetime
 
 
 class Tickets(commands.Cog):
+    '''
+    Cog responsible for ticket system.
+    '''
     def __init__(self, bot):
+        '''
+        Initializes the Tickets cog.
+
+        Arguments:
+            bot: Discord bot instance.
+        '''
         self.bot = bot
 
     async def get_database_cog(self):
@@ -38,6 +47,15 @@ class Tickets(commands.Cog):
     
     @app_commands.command(name = "setup_tickets", description="Use on channel dedicated to tickets!")
     async def setup(self, interaction : discord.Interaction):
+        '''
+        Sends an embed with a button to create tickets.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+
+        Returns:
+            Embed with button.
+        '''
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!")
@@ -61,7 +79,14 @@ class TicketView(discord.ui.View):
 
     @discord.ui.button(label="📩 Click to create a ticket!", style=discord.ButtonStyle.grey)
     async def create(self, interaction : discord.Interaction, button: discord.ui.Button):
-        
+        '''
+        Creates a new ticket channel with restricted access for the user.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            button (discord.ui.Button): Not used but required by syntax.
+        '''
+
         overwrites = {
             interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
             interaction.user: discord.PermissionOverwrite(view_channel=True)
@@ -77,13 +102,26 @@ class TicketView(discord.ui.View):
 
 class InTicketView(discord.ui.View):
     def __init__(self, channel : discord.TextChannel, member : discord.Member):
+        '''
+        Initializes the ticket control view.
+
+        Arguments:
+            channel (discord.TextChannel): Channel that was created.
+            member (discord.Member): Member that created a ticket.
+        '''
         super().__init__()
         self.channel = channel
         self.member = member
 
     @discord.ui.button(label="🔒 Close", style = discord.ButtonStyle.gray)
     async def close(self, interaction : discord.Interaction, button: discord.ui.Button):
-        
+        '''
+        Closes the ticket for the user and displays the admin control panel.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            button (discord.ui.Button): Not used but required by syntax.
+        '''
         embed1 = Embed(title = f"Closed by {self.member.name}")
 
         await interaction.response.send_message(embed=embed1)
@@ -96,12 +134,26 @@ class InTicketView(discord.ui.View):
 
 class AfterTicketView(discord.ui.View):
     def __init__(self, channel : discord.TextChannel, member : discord.Member):
+        '''
+        Initializes the control panel view shown after the ticket is closed.
+
+        Arguments:
+            channel (discord.TextChannel): Channel that was created.
+            member (discord.Member): Member that created a ticket.
+        '''
         super().__init__()
         self.channel = channel
         self.member = member
 
     @discord.ui.button(label = "❌ Delete", style = discord.ButtonStyle.gray)
     async def delete(self, interaction : discord.Interaction, button: discord.ui.Button):
+        '''
+        Deletes a ticket.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            button (discord.ui.Button): Not used but required by syntax.
+        '''
 
         await interaction.response.send_message("**Channel will be deleted in 5 seconds!**", )
 
@@ -111,6 +163,17 @@ class AfterTicketView(discord.ui.View):
 
     @discord.ui.button(label = "📝 Log", style = discord.ButtonStyle.gray)
     async def log(self, interaction : discord.Interaction, button: discord.ui.Button):
+        '''
+        Generates and sends a .txt file containing the ticket's message log.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+            button (discord.ui.Button): Not used but required by syntax.
+
+        Returns:
+            A .txt file containing the message history.
+        '''
+
         await interaction.response.send_message("Please wait, generating logs...")
 
         date = datetime.now().strftime("%Y-%m-%d")
