@@ -75,9 +75,9 @@ class Tickets(commands.Cog):
     
 class TicketView(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
 
-    @discord.ui.button(label="📩 Click to create a ticket!", style=discord.ButtonStyle.grey)
+    @discord.ui.button(label="📩 Click to create a ticket!", style=discord.ButtonStyle.grey, custom_id="create_ticket")
     async def create(self, interaction : discord.Interaction, button: discord.ui.Button):
         '''
         Creates a new ticket channel with restricted access for the user.
@@ -92,13 +92,24 @@ class TicketView(discord.ui.View):
             interaction.user: discord.PermissionOverwrite(view_channel=True)
         }  
 
-        channel = await interaction.guild.create_text_channel(name=f"Ticket {interaction.user.name}", overwrites=overwrites)
+        try:
 
-        embed = Embed(title="Support will contact shortly, please wait.", description="To close this ticket, click ❌\nTo get log of this conversation, click 📝", color=discord.Color.dark_green())
+            existing_channel = discord.utils.get(interaction.guild.text_channels, topic=str(interaction.user.id))
 
-        await interaction.response.defer(ephemeral=True)
+            if existing_channel:
+                await interaction.response.send_message("U already have a ticket open!", ephemeral=True)
+                return
 
-        await channel.send(embed=embed, view=InTicketView(channel, interaction.user))
+            channel = await interaction.guild.create_text_channel(name=f"ticket-{interaction.user.name}", overwrites=overwrites, topic=str(interaction.user.id))
+
+            embed = Embed(title="Support will contact shortly, please wait.", description="To close this ticket, click ❌\nTo get log of this conversation, click 📝", color=discord.Color.dark_green())
+
+            await interaction.response.defer(ephemeral=True)
+
+            await channel.send(embed=embed, view=InTicketView(channel, interaction.user))
+        
+        except (discord.Forbidden, PermissionError) as e:
+            print(f"Error in TicketView: {e}")
 
 class InTicketView(discord.ui.View):
     def __init__(self, channel : discord.TextChannel, member : discord.Member):
