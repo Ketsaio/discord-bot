@@ -5,6 +5,7 @@ from discord import app_commands
 from asyncio import sleep
 import aiofiles
 from datetime import datetime
+import io
 
 
 class Tickets(commands.Cog):
@@ -189,14 +190,21 @@ class AfterTicketView(discord.ui.View):
 
         date = datetime.now().strftime("%Y-%m-%d")
 
-        async with aiofiles.open(f"logs/{self.member.name}_{date}.txt", "w") as f:
-            async for message in self.channel.history():
-                if message.author == interaction.guild.me:
-                    continue
-            
-                await f.write(f"{message.author}: {message.content}\n")
+        buffer = io.BytesIO()
 
-        await interaction.followup.send(file=discord.File(f"logs/{self.member.name}_{date}.txt"))
+        async for message in self.channel.history(oldest_first=True):
+            if message.author == interaction.guild.me:
+                continue
+            else:
+                content = f"[{message.created_at.strftime('%Y-%m-%d %H:%M')}] {message.author}: {message.content}\n"
+                buffer.write(content.encode('UTF-8'))
+            
+        buffer.seek(0)
+
+        file_name = f"{self.member.name}_{date}.txt"
+
+        await interaction.followup.send(file=discord.File(fp=buffer, filename=file_name))
+        buffer.close()
 
 async def setup(bot):
     await bot.add_cog(Tickets(bot))

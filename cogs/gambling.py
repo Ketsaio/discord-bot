@@ -118,9 +118,9 @@ class Gambling(commands.Cog):
 
             await interaction.followup.send(embed=embed_result, ephemeral=True)
         except (ValueError, TypeError) as e:
-            print(f"Value or Type error in automats: {e}")
+            print(f"Value or Type error in slots: {e}")
         except PyMongoError as MongoE:
-            print(f"PyMongo error in automats: {MongoE}")
+            print(f"PyMongo error in slots: {MongoE}")
 
                     
 
