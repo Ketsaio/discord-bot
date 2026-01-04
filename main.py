@@ -4,6 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from pymongo import AsyncMongoClient
+from cogs.views import TicketView, InTicketView, AfterTicketView
 
 load_dotenv() # loads .env
 
@@ -30,9 +31,14 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         for file in os.listdir("cogs"):         # loads all .py files from cogs folder as extentions
-            if file.endswith(".py"):
+            if file.endswith(".py") and file != "views.py":
                 await self.load_extension(f"cogs.{file[:-3]}")
         print(f"Loaded {len(os.listdir('cogs'))} cogs")
+
+        self.add_view(TicketView())
+        self.add_view(InTicketView())
+        self.add_view(AfterTicketView())
+        print("Loaded all views!")
 
 
 bot = MyBot(command_prefix="?", database = database)
