@@ -3,6 +3,7 @@ import io
 from datetime import datetime
 from discord import Embed
 from asyncio import sleep
+from discord.ui import DynamicItem
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -140,3 +141,57 @@ class AfterTicketView(discord.ui.View):
 
         except (discord.Forbidden, PermissionError) as e:
             print(f"Error in TicketView: {e}")
+
+
+class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id>[0-9]+)'):
+    def __init__(self, role_id : int):
+        super().__init__(discord.ui.Button(style=discord.ButtonStyle.primary, label="Role", custom_id=f"role:{role_id}", emoji="🎭"))
+
+        self.role_id = role_id
+
+    @classmethod
+    async def from_custom_id(cls, interaction, item, match, /):
+        return cls(int(match['id']))
+    
+    async def callback(self, interaction : discord.Interaction):
+
+        role = interaction.guild.get_role(self.role_id)
+
+        if not role:
+            await interaction.response.send_message("This role doesnt exit")
+            return
+        
+        if role in interaction.user.roles:
+            await interaction.user.remove_roles(role)
+        else:
+            await interaction.user.add_roles(role)
+
+        await interaction.response.defer()
+
+
+class PanelSetupView(discord.ui.View):
+    def __init__(self, title : str, desc : str):
+        super().__init__(timeout=180)
+        self.title = title
+        self.desc = desc
+        self.selected_roles = []
+
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="select roles...", min_values=1, max_values=25)
+    async def select_roles(self, interaction : discord.Interaction, select : discord.ui.RoleSelect):
+        self.selected_roles = select.values
+        await interaction.response.defer()
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    async def confirm(self, intreaction : discord.Interaction, button : discord.ui.Button):
+
+        embed = Embed(title=self.title, description=self.desc, color=discord.Color.blue())
+
+        view = discord.ui.View(timeout=None)
+
+        for role in self.selected_roles:
+            button = DynamicRoleButton(role.id)
+            button.item.label = role.name
+
+            view.add_item(button)
+
+        await intreaction.response.send_message(embed=embed, view=view)
