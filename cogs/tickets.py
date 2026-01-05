@@ -2,8 +2,6 @@ import discord
 from discord import Embed
 from discord.ext import commands
 from discord import app_commands
-from asyncio import sleep
-from datetime import datetime
 from .views import TicketView
 
 
@@ -65,12 +63,15 @@ class Tickets(commands.Cog):
             await interaction.response.send_message("I dont have permissions to do that!")
             return
 
-        embed = Embed(
-            title="Siemano",
-            description="Aby stworzyć ticket kliknij przycisk niżej!",
-            color=discord.Color.dark_green()
-        )
-        await interaction.response.send_message(embed=embed, view=TicketView())
+        try:
+            embed = Embed(
+                title="Siemano",
+                description="Aby stworzyć ticket kliknij przycisk niżej!",
+                color=discord.Color.dark_green()
+            )
+            await interaction.response.send_message(embed=embed, view=TicketView())
+        except discord.Forbidden as e:
+            print(f"discord Forbidden in tickets: {e}")
 
 async def setup(bot):
     await bot.add_cog(Tickets(bot))

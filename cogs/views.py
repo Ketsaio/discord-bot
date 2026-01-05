@@ -24,7 +24,6 @@ class TicketView(discord.ui.View):
         }  
 
         try:
-
             existing_channel = discord.utils.get(interaction.guild.text_channels, topic=str(interaction.user.id))
 
             if existing_channel:
@@ -62,16 +61,19 @@ class InTicketView(discord.ui.View):
             interaction (discord.Interaction): Context interaction.
             button (discord.ui.Button): Not used but required by syntax.
         '''
+        try:
+            embed1 = Embed(title = f"Closed by {interaction.user.name}")
 
-        embed1 = Embed(title = f"Closed by {interaction.user.name}")
+            await interaction.response.send_message(embed=embed1)
 
-        await interaction.response.send_message(embed=embed1)
+            await interaction.channel.set_permissions(interaction.user, view_channel=False)
 
-        await interaction.channel.set_permissions(interaction.user, view_channel=False)
+            embed2 = Embed(title = "======= CONTROL PANEL =======", description="To delete ticket click button with ❌\nTo get ticket log click button with 📝", color=discord.Color.dark_green())
 
-        embed2 = Embed(title = "======= CONTROL PANEL =======", description="To delete ticket click button with ❌\nTo get ticket log click button with 📝", color=discord.Color.dark_green())
+            await interaction.followup.send(embed=embed2, view=AfterTicketView())
 
-        await interaction.followup.send(embed=embed2, view=AfterTicketView())
+        except (discord.Forbidden, PermissionError) as e:
+            print(f"Error in TicketView: {e}")
 
 class AfterTicketView(discord.ui.View):
     def __init__(self):
@@ -93,12 +95,15 @@ class AfterTicketView(discord.ui.View):
             interaction (discord.Interaction): Context interaction.
             button (discord.ui.Button): Not used but required by syntax.
         '''
+        try:
+            await interaction.response.send_message("**Channel will be deleted in 5 seconds!**", )
 
-        await interaction.response.send_message("**Channel will be deleted in 5 seconds!**", )
+            await sleep(5)
 
-        await sleep(5)
+            await interaction.channel.delete()
 
-        await interaction.channel.delete()
+        except (discord.Forbidden, PermissionError) as e:
+            print(f"Error in TicketView: {e}")
 
     @discord.ui.button(label = "📝 Log", style = discord.ButtonStyle.gray, custom_id="view_logs_in_ticket")
     async def log(self, interaction : discord.Interaction, button: discord.ui.Button):
@@ -112,23 +117,26 @@ class AfterTicketView(discord.ui.View):
         Returns:
             A .txt file containing the message history.
         '''
+        try:
+            await interaction.response.send_message("Please wait, generating logs...")
 
-        await interaction.response.send_message("Please wait, generating logs...")
+            date = datetime.now().strftime("%Y-%m-%d")
 
-        date = datetime.now().strftime("%Y-%m-%d")
+            buffer = io.BytesIO()
 
-        buffer = io.BytesIO()
+            async for message in interaction.channel.history(oldest_first=True):
+                if message.author == interaction.guild.me:
+                    continue
+                else:
+                    content = f"[{message.created_at.strftime('%Y-%m-%d %H:%M')}] {message.author}: {message.content}\n"
+                    buffer.write(content.encode('UTF-8'))
+                
+            buffer.seek(0)
 
-        async for message in interaction.channel.history(oldest_first=True):
-            if message.author == interaction.guild.me:
-                continue
-            else:
-                content = f"[{message.created_at.strftime('%Y-%m-%d %H:%M')}] {message.author}: {message.content}\n"
-                buffer.write(content.encode('UTF-8'))
-            
-        buffer.seek(0)
+            file_name = f"{interaction.user.name}_{date}.txt"
 
-        file_name = f"{interaction.user.name}_{date}.txt"
+            await interaction.followup.send(file=discord.File(fp=buffer, filename=file_name))
+            buffer.close()
 
-        await interaction.followup.send(file=discord.File(fp=buffer, filename=file_name))
-        buffer.close()
+        except (discord.Forbidden, PermissionError) as e:
+            print(f"Error in TicketView: {e}")
