@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from pymongo import AsyncMongoClient
-from cogs.views import TicketView, InTicketView, AfterTicketView
+from cogs.views import TicketView, InTicketView, AfterTicketView, DynamicRoleButton
 
 load_dotenv() # loads .env
 
@@ -39,6 +39,10 @@ class MyBot(commands.Bot):
         self.add_view(InTicketView())
         self.add_view(AfterTicketView())
         print("Loaded all views!")
+
+        self.add_dynamic_items(DynamicRoleButton)
+        print("Loaded all Dynamic Items!")
+
 
 
 bot = MyBot(command_prefix="?", database = database)

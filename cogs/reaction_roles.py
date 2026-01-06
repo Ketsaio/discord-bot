@@ -2,7 +2,7 @@ import discord
 from discord import Embed
 from discord.ext import commands
 from discord import app_commands
-from .views import PanelSetupView
+from .views import RoleSetupView
 
 class Reaction_roles(commands.Cog):
     def __init__(self, bot):
@@ -34,8 +34,8 @@ class Reaction_roles(commands.Cog):
         return member_data
     
     @app_commands.command(name="setup_reaction_roles", description="Sets up reaction roles embed")
-    @app_commands.describe(title="Title of your embed", desc="Description of your embed")
-    async def setup_rr(self, interaction : discord.Interaction, title : str, desc : str):
+    @app_commands.describe(channel = "Where u want your RR")
+    async def setup_rr(self, interaction : discord.Interaction, channel : discord.TextChannel):
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!")
@@ -45,9 +45,11 @@ class Reaction_roles(commands.Cog):
             await interaction.response.send_message("I dont have permissions to do that!")
             return
         
+
+        
         embed = Embed(title="Reaction roles embed creator!", description="Select roles from the dropdown menu")
 
-        view = PanelSetupView(title, desc)
+        view = RoleSetupView(channel)
 
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 

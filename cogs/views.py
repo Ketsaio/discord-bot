@@ -3,7 +3,7 @@ import io
 from datetime import datetime
 from discord import Embed
 from asyncio import sleep
-from discord.ui import DynamicItem
+from discord.ui import DynamicItem, TextInput, Modal
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -145,7 +145,7 @@ class AfterTicketView(discord.ui.View):
 
 class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id>[0-9]+)'):
     def __init__(self, role_id : int):
-        super().__init__(discord.ui.Button(style=discord.ButtonStyle.primary, label="Role", custom_id=f"role:{role_id}", emoji="🎭"))
+        super().__init__(discord.ui.Button(style=discord.ButtonStyle.primary, label="Role", custom_id=f"role:{role_id}"))
 
         self.role_id = role_id
 
@@ -169,12 +169,81 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
         await interaction.response.defer()
 
 
-class PanelSetupView(discord.ui.View):
-    def __init__(self, title : str, desc : str):
+
+class FinalSetupModal(Modal, title="RR Configuration"):
+    def __init__(self, channel, selected_roles):
+        super().__init__()
+        self.channel = channel
+        self.selected_roles = selected_roles
+
+        self.title_input = TextInput(label="Title of RR Embed", default="Role Center", required=True)
+
+        default_desc = "Choose your rang:\n\n"
+        for role in selected_roles:
+            default_desc += f"👉 {role.mention} <- {role.name}\n"
+
+        self.desc_input = TextInput(label="Description of RR Embed", default=default_desc, style=discord.TextStyle.paragraph, required=True)
+        self.emoji_input = TextInput(label=f"Emotes for {len(self.selected_roles)} roles", placeholder="📄 📝 🔒 (remember to put space between)", required=False)
+        self.colors_input = TextInput(label="Colors for each role (blue, gray, green, red)", placeholder="green blue blue (remember to put space between)", required=False)
+        self.embed_color = TextInput(label="Color of your embed!", placeholder="#FF00FF", required=True)
+
+        self.add_item(self.title_input)
+        self.add_item(self.desc_input)
+        self.add_item(self.emoji_input)
+        self.add_item(self.colors_input)
+        self.add_item(self.embed_color)
+
+
+    def parse_style(self, text):
+        text = text.lower().strip()
+        if text in ["green", "success"]:
+            return discord.ButtonStyle.green
+        elif text in ["red", "danger"]:
+            return discord.ButtonStyle.red
+        elif text in ["grey", "gray", "secondary"]:
+            return discord.ButtonStyle.secondary
+        elif text in ["blue", "blurple", "primary"]:
+            return discord.ButtonStyle.primary
+        else:
+            return None
+
+    async def on_submit(self, interaction : discord.Interaction):
+        
+        embed = Embed(title=self.title_input.value, description=self.desc_input.value, color=discord.Color.from_str(self.embed_color.value))
+
+        emojis = list(self.emoji_input.value.split(' '))
+
+        colors = list(self.colors_input.value.split(' '))
+
+        embed.set_author(name="BrazilBot", icon_url=interaction.client.user.display_avatar.url)
+
+        view = discord.ui.View(timeout=None)
+
+        for i, role in enumerate(self.selected_roles):
+            button = DynamicRoleButton(role.id)
+            button.item.label = role.name
+
+            if i < len(emojis):
+                button.item.emoji = emojis[i]
+
+            if i < len(colors):
+                try:
+                    button.item.style = self.parse_style(colors[i])
+                except Exception:
+                    pass
+
+            view.add_item(button)
+
+        await self.channel.send(embed=embed, view=view)
+        await interaction.response.defer()
+
+
+class RoleSetupView(discord.ui.View):
+    def __init__(self, channel : discord.TextChannel):
         super().__init__(timeout=180)
-        self.title = title
-        self.desc = desc
+        self.channel = channel
         self.selected_roles = []
+
 
     @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="select roles...", min_values=1, max_values=25)
     async def select_roles(self, interaction : discord.Interaction, select : discord.ui.RoleSelect):
@@ -184,14 +253,9 @@ class PanelSetupView(discord.ui.View):
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def confirm(self, intreaction : discord.Interaction, button : discord.ui.Button):
 
-        embed = Embed(title=self.title, description=self.desc, color=discord.Color.blue())
-
-        view = discord.ui.View(timeout=None)
-
-        for role in self.selected_roles:
-            button = DynamicRoleButton(role.id)
-            button.item.label = role.name
-
-            view.add_item(button)
-
-        await intreaction.response.send_message(embed=embed, view=view)
+        if not self.select_roles:
+            await intreaction.response.send_message("Choose roles!", ephemeral=True)
+            return
+        
+        modal = FinalSetupModal(self.channel, self.selected_roles)
+        await intreaction.response.send_modal(modal)
