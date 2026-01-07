@@ -145,6 +145,12 @@ class AfterTicketView(discord.ui.View):
 
 class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id>[0-9]+)'):
     def __init__(self, role_id : int):
+        '''
+        Initializes a single button under a RR Embed.
+        
+        Arguments:
+            role_id (int): ID of role connected to the button.
+        '''
         super().__init__(discord.ui.Button(style=discord.ButtonStyle.primary, label="Role", custom_id=f"role:{role_id}"))
 
         self.role_id = role_id
@@ -154,13 +160,18 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
         return cls(int(match['id']))
     
     async def callback(self, interaction : discord.Interaction):
+        '''
+        Gives/Removes role from user.
+
+        Arguments:
+            interaction (discord.Interaction): Interaction context.
+        '''
 
         try:
-
             role = interaction.guild.get_role(self.role_id)
 
             if not role:
-                await interaction.response.send_message("This role doesnt exit")
+                await interaction.response.send_message("This role doesnt exist")
                 return
             
             if role in interaction.user.roles:
@@ -177,6 +188,13 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
 
 class FinalSetupModal(Modal, title="RR Configuration"):
     def __init__(self, channel, selected_roles):
+        '''
+        Initializes the Modal elements.
+
+        Arguments:
+            channel (discord.TextChannel): Channel for RR Embed.
+            selected_roles (list): List of selected roles for RR.
+        '''
         super().__init__()
         self.channel = channel
         self.selected_roles = selected_roles
@@ -200,6 +218,15 @@ class FinalSetupModal(Modal, title="RR Configuration"):
 
 
     def parse_style(self, text):
+        '''
+        Translate provided style for button to discord.ButtonStyle.
+
+        Arguments:
+            text (string): style to translate.
+
+        Returns:
+            discord.ButtonStyle.*.
+        '''
         text = text.lower().strip()
         if text in ["green", "success"]:
             return discord.ButtonStyle.green
@@ -247,6 +274,12 @@ class FinalSetupModal(Modal, title="RR Configuration"):
 
 class RoleSetupView(discord.ui.View):
     def __init__(self, channel : discord.TextChannel):
+        '''
+        Initializes the select and the button attached to setup_rr Embed.
+
+        Arguments:
+            channel (discord.TextChannel): Channel for RR Embed.
+        '''
         super().__init__(timeout=180)
         self.channel = channel
         self.selected_roles = []
@@ -254,13 +287,27 @@ class RoleSetupView(discord.ui.View):
 
     @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="select roles...", min_values=1, max_values=25)
     async def select_roles(self, interaction : discord.Interaction, select : discord.ui.RoleSelect):
+        '''
+        Updates the selected roles list.
+
+        Arguments:
+            interaction (discord.Interaction): Interaction context.
+            select (discord.ui.RoleSelect): Select containing every role.
+        '''
         self.selected_roles = select.values
         await interaction.response.defer()
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def confirm(self, intreaction : discord.Interaction, button : discord.ui.Button):
+        '''
+        Submits chosen roles to go into Reaction Roles.
 
-        if not self.select_roles:
+        Arguments:
+            interaction (discord.Interaction): Interaction context.
+            button (discord.ui.Button): Confirmation button.
+        '''
+
+        if not self.selected_roles:
             await intreaction.response.send_message("Choose roles!", ephemeral=True)
             return
         
