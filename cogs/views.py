@@ -155,18 +155,23 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
     
     async def callback(self, interaction : discord.Interaction):
 
-        role = interaction.guild.get_role(self.role_id)
+        try:
 
-        if not role:
-            await interaction.response.send_message("This role doesnt exit")
-            return
+            role = interaction.guild.get_role(self.role_id)
+
+            if not role:
+                await interaction.response.send_message("This role doesnt exit")
+                return
+            
+            if role in interaction.user.roles:
+                await interaction.user.remove_roles(role)
+            else:
+                await interaction.user.add_roles(role)
+
+            await interaction.response.defer()
         
-        if role in interaction.user.roles:
-            await interaction.user.remove_roles(role)
-        else:
-            await interaction.user.add_roles(role)
-
-        await interaction.response.defer()
+        except discord.Forbidden as e:
+            await interaction.followup.send(f"I cant assign role {role.mention}, missing permissions!", ephemeral=True)
 
 
 
@@ -208,34 +213,36 @@ class FinalSetupModal(Modal, title="RR Configuration"):
             return None
 
     async def on_submit(self, interaction : discord.Interaction):
-        
-        embed = Embed(title=self.title_input.value, description=self.desc_input.value, color=discord.Color.from_str(self.embed_color.value))
+        try:
+            embed = Embed(title=self.title_input.value, description=self.desc_input.value, color=discord.Color.from_str(self.embed_color.value))
 
-        emojis = list(self.emoji_input.value.split(' '))
+            emojis = list(self.emoji_input.value.split(' '))
 
-        colors = list(self.colors_input.value.split(' '))
+            colors = list(self.colors_input.value.split(' '))
 
-        embed.set_author(name="BrazilBot", icon_url=interaction.client.user.display_avatar.url)
+            embed.set_author(name="BrazilBot", icon_url=interaction.client.user.display_avatar.url)
 
-        view = discord.ui.View(timeout=None)
+            view = discord.ui.View(timeout=None)
 
-        for i, role in enumerate(self.selected_roles):
-            button = DynamicRoleButton(role.id)
-            button.item.label = role.name
+            for i, role in enumerate(self.selected_roles):
+                button = DynamicRoleButton(role.id)
+                button.item.label = role.name
 
-            if i < len(emojis):
-                button.item.emoji = emojis[i]
+                if i < len(emojis):
+                    button.item.emoji = emojis[i]
 
-            if i < len(colors):
-                try:
-                    button.item.style = self.parse_style(colors[i])
-                except Exception:
-                    pass
+                if i < len(colors):
+                    try:
+                        button.item.style = self.parse_style(colors[i])
+                    except Exception:
+                        pass
 
-            view.add_item(button)
+                view.add_item(button)
 
-        await self.channel.send(embed=embed, view=view)
-        await interaction.response.defer()
+            await self.channel.send(embed=embed, view=view)
+            await interaction.response.defer()
+        except discord.Forbidden as e:
+            print(f"Bot permission error in FinalSetupModal: {e}")
 
 
 class RoleSetupView(discord.ui.View):

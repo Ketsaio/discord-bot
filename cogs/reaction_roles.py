@@ -45,13 +45,16 @@ class Reaction_roles(commands.Cog):
             await interaction.response.send_message("I dont have permissions to do that!")
             return
         
-
+        try:
         
-        embed = Embed(title="Reaction roles embed creator!", description="Select roles from the dropdown menu")
+            embed = Embed(title="Reaction roles embed creator!", description="Select roles from the dropdown menu")
 
-        view = RoleSetupView(channel)
+            view = RoleSetupView(channel)
 
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+        except discord.Forbidden as e:
+            print(f"Bot permission error in setup_rr: {e}")
 
 async def setup(bot):
     await bot.add_cog(Reaction_roles(bot))
