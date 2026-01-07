@@ -5,7 +5,16 @@ from discord import app_commands
 from .views import RoleSetupView
 
 class Reaction_roles(commands.Cog):
+    '''
+    Cog responsible for creating Reaction Roles.
+    '''
     def __init__(self, bot):
+        '''
+        Initializes Reaction_roles Cog.
+
+        Arguments:
+            bot: Discord bot instance.
+        '''
         self.bot = bot
 
     async def get_database_cog(self):
