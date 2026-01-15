@@ -3,3 +3,7 @@ __pycache__/
 logs/*
 !logs/.gitkeep
 .venv/
+lavalink/Lavalink.jar
+lavalink/application.yml
+lavalink/logs
+lavalink/plugins/*.jar

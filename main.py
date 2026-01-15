@@ -18,6 +18,7 @@ intents = discord.Intents.default()
 intents.message_content = True          # allows bot to read messages
 intents.members = True                  # allows bot to access member info
 intents.presences = True                # allows bot to see member presence/status (requires privileged intent in Discord dev portal)
+intents.voice_states = True
 
 client = AsyncMongoClient(MONGO)
 database = client["discordbot"]         # connection to database "discordbot" holding users and guilds (in future tickets and reaction roles)

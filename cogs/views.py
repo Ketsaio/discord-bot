@@ -4,6 +4,7 @@ from datetime import datetime
 from discord import Embed
 from asyncio import sleep
 from discord.ui import DynamicItem, TextInput, Modal
+import wavelink
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -313,3 +314,47 @@ class RoleSetupView(discord.ui.View):
         
         modal = FinalSetupModal(self.channel, self.selected_roles)
         await intreaction.response.send_modal(modal)
+
+class MusicButton(discord.ui.Button):
+    def __init__(self, id : int, track : wavelink.Playable, mode : bool):
+        super().__init__(
+            label=str(id + 1),
+            style=discord.ButtonStyle.primary,
+            row=id // 5
+        )
+        self.track = track
+        self.mode = mode
+
+    async def callback(self, interaction : discord.Interaction):
+
+        await interaction.response.defer()
+
+        if not interaction.user.voice:
+            return
+        
+        player : wavelink = interaction.guild.voice_client
+
+        if not player:
+            player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
+        else:
+            if player.channel.id != interaction.user.voice.channel.id:
+                return
+            
+        if self.mode:
+            player.queue.put(self.track)
+        else:
+            if player.playing:
+                player.queue.put(self.track)
+            else:
+                await player.play(self.track)
+
+        self.view.stop()
+
+
+class MenuForMusic(discord.ui.View):
+    def __init__(self, tracks : list, mode : bool):
+        super().__init__(timeout=60)
+        self.tracks = tracks
+
+        for id, track in enumerate(self.tracks):
+            self.add_item(MusicButton(id, track, mode))
