@@ -119,7 +119,7 @@ class Music_player(commands.Cog):
 
         if(await self.no_stealing(interaction)):
             return
-        
+
         await interaction.response.defer()
 
         player : wavelink = interaction.guild.voice_client
@@ -144,19 +144,25 @@ class Music_player(commands.Cog):
         if await self.no_stealing(interaction):
             return
 
-        tracks = await wavelink.Playable.search(argument)  # poczytać dokumentacje o Playable i Playerze, bo to będę głównie obsługiwał!
-        
+        try:
+            tracks = await wavelink.Playable.search(argument)
+        except wavelink.LavalinkLoadException as e:
+            print(f"Lavalink error: {e}")
+
+
         player : wavelink = interaction.guild.voice_client
 
         if(len(tracks) == 1):
+            try:
+                if not player:
+                    player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
 
-            if not player:
-                player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
-
-            if not player.playing:
-                await player.play(tracks[0])
-            else:
-                player.queue.put(tracks[0])
+                if not player.playing:
+                    await player.play(tracks[0])
+                else:
+                    player.queue.put(tracks[0])
+            except (discord.Forbidden, discord.ClientException, Exception) as e:
+                print(f"Error on music button callback! {e}")
 
         else:
 
@@ -168,13 +174,16 @@ class Music_player(commands.Cog):
             await self.embed_for_songs(interaction, tracks, mode)
 
     async def cog_load(self):
-        if not wavelink.Pool.nodes:
+        try:
             node = wavelink.Node(
                 uri="http://localhost:2333", 
                 password=self.passw   # załadować passy z .env   
             )
             await wavelink.Pool.connect(nodes=[node], client=self.bot)
             print("Wavelink: Connected succefully!")
+        except wavelink.InvalidNodeException as e:
+            print(f"Node error on connect, exiting! | {e}")
+            exit()
 
     async def embed_for_songs(self, interaction : discord.Interaction, tracks : list, mode : bool):
 
@@ -183,17 +192,31 @@ class Music_player(commands.Cog):
 
             tracks = tracks[:10]
 
-            for i in range(10):
-                embed.add_field(name=f"{emotes[i]} {tracks[i].title}", value=f"By: {tracks[i].author}", inline=False)
+            for i, track in enumerate(tracks):
+                embed.add_field(name=f"{emotes[i]} {track.title}", value=f"By: {track.author}", inline=False)
                 
             await interaction.followup.send(embed=embed, view=MenuForMusic(tracks, mode)) # mode: False = Play | True = Queue
 
     async def no_stealing(self, interaction : discord.Interaction):
         player : wavelink = interaction.guild.voice_client
 
+        if not interaction.user.voice:
+            msg = "Join channel to use me!"
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+            return True
+
         if player and player.playing:
             if interaction.user.voice.channel.id != player.channel.id:
-                await interaction.followup.send (f"Bot is playing music on {player.channel} voice channel!", ephemeral=True)
+
+                msg = f"Bot is playing music on {player.channel} voice channel!"
+
+                if interaction.response.is_done():
+                    await interaction.followup.send(msg, ephemeral=True)
+                else:
+                    await interaction.response.send_message(msg, ephemeral=True)
                 return True
             
         return False

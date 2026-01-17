@@ -331,24 +331,26 @@ class MusicButton(discord.ui.Button):
 
         if not interaction.user.voice:
             return
-        
-        player : wavelink = interaction.guild.voice_client
+        try:
+            player : wavelink = interaction.guild.voice_client
 
-        if not player:
-            player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
-        else:
-            if player.channel.id != interaction.user.voice.channel.id:
-                return
-            
-        if self.mode:
-            player.queue.put(self.track)
-        else:
-            if player.playing:
+            if not player:
+                player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
+            else:
+                if player.channel.id != interaction.user.voice.channel.id:
+                    return
+                
+            if self.mode:
                 player.queue.put(self.track)
             else:
-                await player.play(self.track)
+                if player.playing:
+                    player.queue.put(self.track)
+                else:
+                    await player.play(self.track)
 
-        self.view.stop()
+            self.view.stop()
+        except (discord.Forbidden, discord.ClientException, Exception) as e:
+            print(f"Error on music button callback! {e}")
 
 
 class MenuForMusic(discord.ui.View):
