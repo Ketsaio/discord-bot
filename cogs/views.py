@@ -5,6 +5,7 @@ from discord import Embed
 from asyncio import sleep
 from discord.ui import DynamicItem, TextInput, Modal
 import wavelink
+from math import ceil
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -348,7 +349,6 @@ class MusicButton(discord.ui.Button):
                 else:
                     await player.play(self.track)
 
-            self.view.stop()
         except (discord.Forbidden, discord.ClientException, Exception) as e:
             print(f"Error on music button callback! {e}")
 
@@ -360,3 +360,55 @@ class MenuForMusic(discord.ui.View):
 
         for id, track in enumerate(self.tracks):
             self.add_item(MusicButton(id, track, mode))
+
+class Queue_View(discord.ui.View):
+    def __init__(self, queue_list : list):
+        super().__init__(timeout=180)
+        self.queue = queue_list
+        self.current_page = 0
+        self.items_per_page = 10
+        self.pages = ceil(len(queue_list) / self.items_per_page)
+
+        self.update_buttons()
+
+    def update_buttons(self):
+
+        if(self.current_page == 0):
+            self.children[0].disabled = True
+        else:
+            self.children[0].disabled = False
+
+        if(self.current_page == self.pages-1):
+            self.children[1].disabled = True
+        else:
+            self.children[1].disabled = False
+
+    def create_embed(self):
+
+        start = self.current_page * self.items_per_page
+        end = start + self.items_per_page
+
+        current_items = self.queue[start:end]
+
+        embed = Embed(title="Songs in queue!")
+        embed.set_footer(text=f"Page {self.current_page+1} of {self.pages}")
+
+        for id, item in enumerate(current_items):
+            embed.add_field(name=f"{id+1+start}. {item.title}", value=item.author, inline=False)
+
+        return embed
+    
+    @discord.ui.button(label="◀️", style=discord.ButtonStyle.secondary)
+    async def prev_button(self, interaction : discord.Interaction, button : discord.Button):
+        self.current_page -= 1
+        self.update_buttons()
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+
+
+    @discord.ui.button(label="▶️", style=discord.ButtonStyle.secondary)
+    async def next_button(self, interaction : discord.Interaction, button : discord.Button):
+        self.current_page += 1
+        self.update_buttons()
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+
+        

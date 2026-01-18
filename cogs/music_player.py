@@ -5,7 +5,7 @@ from discord import app_commands
 import wavelink
 from dotenv import load_dotenv
 from os import getenv
-from .views import MenuForMusic
+from .views import MenuForMusic, Queue_View
 from typing import Literal
 
 
@@ -17,7 +17,7 @@ class Music_player(commands.Cog):
         self.passw = getenv("LAVALINK_CLIENT")
 
     @commands.Cog.listener()
-    async def on_wavelink_track_end(self, payload : wavelink.TrackStartEventPayload):
+    async def on_wavelink_track_end(self, payload : wavelink.TrackEndEventPayload):
 
         player : wavelink = payload.player
 
@@ -117,7 +117,7 @@ class Music_player(commands.Cog):
     @app_commands.command(name="show_queue", description="Look into your queue!")
     async def show_queue(self, interaction : discord.Interaction):
 
-        if(await self.no_stealing(interaction)):
+        if await self.no_stealing(interaction):
             return
 
         await interaction.response.defer()
@@ -127,13 +127,11 @@ class Music_player(commands.Cog):
         if not player:
             return
         
-        embed = Embed(title="Songs in queue!")
+        view = Queue_View(list(player.queue))
 
-        for id, item in enumerate(player.queue):
-            embed.add_field(name=f"{id+1}. {item.title}", value=item.author, inline=False)
-
-
-        await interaction.followup.send(embed=embed)
+        embed = view.create_embed()
+        
+        await interaction.followup.send(embed=embed, view=view)
 
     @app_commands.command(name="play", description="Play your favourite music!")
     @app_commands.describe(argument="Title/Author/Link to your song!")
@@ -194,32 +192,34 @@ class Music_player(commands.Cog):
 
             for i, track in enumerate(tracks):
                 embed.add_field(name=f"{emotes[i]} {track.title}", value=f"By: {track.author}", inline=False)
-                
+
             await interaction.followup.send(embed=embed, view=MenuForMusic(tracks, mode)) # mode: False = Play | True = Queue
 
     async def no_stealing(self, interaction : discord.Interaction):
         player : wavelink = interaction.guild.voice_client
-
-        if not interaction.user.voice:
-            msg = "Join channel to use me!"
-            if interaction.response.is_done():
-                await interaction.followup.send(msg, ephemeral=True)
-            else:
-                await interaction.response.send_message(msg, ephemeral=True)
-            return True
-
-        if player and player.playing:
-            if interaction.user.voice.channel.id != player.channel.id:
-
-                msg = f"Bot is playing music on {player.channel} voice channel!"
-
+        try:   
+            if not interaction.user.voice:
+                msg = "Join channel to use me!"
                 if interaction.response.is_done():
                     await interaction.followup.send(msg, ephemeral=True)
                 else:
                     await interaction.response.send_message(msg, ephemeral=True)
                 return True
-            
-        return False
+
+            if player and player.playing:
+                if interaction.user.voice.channel.id != player.channel.id:
+
+                    msg = f"Bot is playing music on {player.channel} voice channel!"
+
+                    if interaction.response.is_done():
+                        await interaction.followup.send(msg, ephemeral=True)
+                    else:
+                        await interaction.response.send_message(msg, ephemeral=True)
+                    return True
+                
+            return False
+        except discord.Forbidden as e:
+                print(f"Cant send message! {e}")
 
 
 async def setup(bot):
