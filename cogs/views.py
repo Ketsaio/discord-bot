@@ -318,6 +318,14 @@ class RoleSetupView(discord.ui.View):
 
 class MusicButton(discord.ui.Button):
     def __init__(self, id : int, track : wavelink.Playable, mode : bool):
+        '''
+        Creates a button linked to song.
+
+        Arguments:
+            id (int): Number of song.
+            track (wavelink.Playable): Track that will be played after interaction.
+            mode (bool): Decides if play right now or add to queue.
+        '''
         super().__init__(
             label=str(id + 1),
             style=discord.ButtonStyle.primary,
@@ -327,6 +335,12 @@ class MusicButton(discord.ui.Button):
         self.mode = mode
 
     async def callback(self, interaction : discord.Interaction):
+        '''
+        On button click plays chosen song or adds it to the queue.
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+        '''
 
         await interaction.response.defer()
 
@@ -355,6 +369,13 @@ class MusicButton(discord.ui.Button):
 
 class MenuForMusic(discord.ui.View):
     def __init__(self, tracks : list, mode : bool):
+        '''
+        Initializes buttons for song choosing menu.
+
+        Arguments:
+            tracks (list): List of track that will be linked to each button.
+            mode (bool): Decides if play right now or add to queue.
+        '''
         super().__init__(timeout=60)
         self.tracks = tracks
 
@@ -363,6 +384,12 @@ class MenuForMusic(discord.ui.View):
 
 class Queue_View(discord.ui.View):
     def __init__(self, queue_list : list):
+        '''
+        Initializes the view for queue.
+
+        Arguments:
+            queue_list (list): List of songs in queue.
+        '''
         super().__init__(timeout=180)
         self.queue = queue_list
         self.current_page = 0
@@ -372,7 +399,9 @@ class Queue_View(discord.ui.View):
         self.update_buttons()
 
     def update_buttons(self):
-
+        '''
+        Updates button on changing page. If page is first/last corresponding button is disabled.
+        '''
         if(self.current_page == 0):
             self.children[0].disabled = True
         else:
@@ -384,7 +413,12 @@ class Queue_View(discord.ui.View):
             self.children[1].disabled = False
 
     def create_embed(self):
+        '''
+        Creates embed with 10 songs from queue, divided into pages that you can move between.
 
+        Returns:
+            "Interactive" embed.
+        '''
         start = self.current_page * self.items_per_page
         end = start + self.items_per_page
 
@@ -399,14 +433,28 @@ class Queue_View(discord.ui.View):
         return embed
     
     @discord.ui.button(label="◀️", style=discord.ButtonStyle.secondary)
-    async def prev_button(self, interaction : discord.Interaction, button : discord.Button):
+    async def prev_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+        '''
+        Button responsible for changing pages (backward).
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            button (discord.ui.Button): Button that was clicked.
+        '''
         self.current_page -= 1
         self.update_buttons()
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
 
     @discord.ui.button(label="▶️", style=discord.ButtonStyle.secondary)
-    async def next_button(self, interaction : discord.Interaction, button : discord.Button):
+    async def next_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+        '''
+        Button responsible for changing pages (forward).
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            button (discord.ui.Button): Button that was clicked.
+        '''
         self.current_page += 1
         self.update_buttons()
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
