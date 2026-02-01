@@ -511,17 +511,21 @@ class AcceptView(discord.ui.View):
             await interaction.response.send_message("It's not your battle!", ephemeral=True)
             return
 
-        self.bot = interaction.client
+        try:
+            self.bot = interaction.client
 
-        data1 = await self.get_member(self.members[0])
-        data2 = await self.get_member(self.members[1])
+            data1 = await self.get_member(self.members[0])
+            data2 = await self.get_member(self.members[1])
 
-        player1 = BattlePlayer(self.members[0], data1)
-        player2 = BattlePlayer(self.members[1], data2)
+            player1 = BattlePlayer(self.members[0], data1)
+            player2 = BattlePlayer(self.members[1], data2)
 
-        embed = Embed(title="Challenge was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
+            embed = Embed(title="Challenge was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
 
-        await interaction.response.edit_message(embed=embed, view=BattleView([player1, player2]))
+            await interaction.response.edit_message(embed=embed, view=BattleView([player1, player2]))
+
+        except discord.Forbidden as e:
+            print(f"I cant do that!\n{e}")
 
     @discord.ui.button(label="Deny", style=discord.ButtonStyle.red)
     async def deny_button(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -537,11 +541,15 @@ class AcceptView(discord.ui.View):
             await interaction.response.send_message("It's not your battle!", ephemeral=True)
             return
             
-        embed = Embed(title="What a coward...", description=f"{self.members[1].mention} has denied {self.members[0].mention} challenge!", color=discord.Colour.dark_gray())
+        try:
+            embed = Embed(title="What a coward...", description=f"{self.members[1].mention} has denied {self.members[0].mention} challenge!", color=discord.Colour.dark_gray())
 
-        await interaction.response.edit_message(embed=embed, view=None)
+            await interaction.response.edit_message(embed=embed, view=None)
 
-        self.stop()
+            self.stop()
+
+        except discord.Forbidden as e:
+            print(f"I cant do that!\n{e}")
 
 
 class BattleView(discord.ui.View):
@@ -565,28 +573,32 @@ class BattleView(discord.ui.View):
         Arguments:
             interaction (discord.Interaction): The interaction context.
         '''
-        self.turn = not self.turn
-        self.curr_playing = self.members[self.turn].member_id
+        try:
+            self.turn = not self.turn
+            self.curr_playing = self.members[self.turn].member_id
 
-        victory_message = "The challenge was won by "
-        end = False
+            victory_message = "The challenge was won by "
+            end = False
 
-        if(self.members[0].pet_hp <= 0):
-            victory_message += self.members[1].member_name
-            end = True
-        elif(self.members[1].pet_hp <= 0):
-            victory_message += self.members[0].member_name
-            end = True
+            if(self.members[0].pet_hp <= 0):
+                victory_message += self.members[1].member_name
+                end = True
+            elif(self.members[1].pet_hp <= 0):
+                victory_message += self.members[0].member_name
+                end = True
 
-        if(end):
-            victory_message += ", congratulations!"
-            embed = Embed(title="BATTLE HAS COME TO AN END!", description=victory_message, color=discord.Colour.green())
+            if(end):
+                victory_message += ", congratulations!"
+                embed = Embed(title="BATTLE HAS COME TO AN END!", description=victory_message, color=discord.Colour.green())
 
-            await interaction.response.edit_message(embed=embed, view=None)
+                await interaction.response.edit_message(embed=embed, view=None)
 
-            self.stop()
-            return False
-        return True
+                self.stop()
+                return False
+            return True
+        
+        except discord.Forbidden as e:
+            print(f"I cant do that!\n{e}")
     
     @discord.ui.button(label="Attack", style=discord.ButtonStyle.danger)
     async def normal_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -600,21 +612,24 @@ class BattleView(discord.ui.View):
         if interaction.user.id != self.curr_playing:
             await interaction.response.send_message("Its not your turn yet!")
             return
-        
-        damage_to_deal = self.members[self.turn].pet_atk
+        try:
+            damage_to_deal = self.members[self.turn].pet_atk
 
-        self.members[not self.turn].receive_damage(damage_to_deal)
+            self.members[not self.turn].receive_damage(damage_to_deal)
 
 
-        embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealt {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
+            embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealt {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
 
-        embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
-        embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
-        
-        state = await self.update_buttons(interaction)
+            embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
+            embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
+            
+            state = await self.update_buttons(interaction)
 
-        if(state):
-            await interaction.response.edit_message(embed=embed, view=self)
+            if(state):
+                await interaction.response.edit_message(embed=embed, view=self)
+
+        except discord.Forbidden as e:
+            print(f"I cant do that!\n{e}")
 
     @discord.ui.button(label="Healing", style=discord.ButtonStyle.danger)
     async def healing(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -629,16 +644,19 @@ class BattleView(discord.ui.View):
             await interaction.response.send_message("Its not your turn yet!")
             return
 
-        embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {self.members[self.turn].regen()}", color=discord.Colour.red())
+        try:
+            embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {self.members[self.turn].regen()}", color=discord.Colour.green())
 
-        embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
-        embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
-        
-        state = await self.update_buttons(interaction)
+            embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
+            embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
+            
+            state = await self.update_buttons(interaction)
 
-        if(state):
-            await interaction.response.edit_message(embed=embed, view=self)
+            if(state):
+                await interaction.response.edit_message(embed=embed, view=self)
 
+        except discord.Forbidden as e:
+            print(f"I cant do that!\n{e}")
 
 class BattlePlayer:
     def __init__(self, member : discord.Member, data_from_db : dict):

@@ -61,12 +61,15 @@ class Pet_fight(commands.Cog):
         if member.id == interaction.guild.me.id:
             await interaction.response.send_message("U cant challange me to a battle!", ephemeral=True)
 
-        embed = Embed(title="Fight is about to begin!", description=f"{interaction.user.mention} challenges {member.mention} to fight!\n\n{member.mention} do u accept?", color=discord.Color.red())
+        try:
+            embed = Embed(title="Fight is about to begin!", description=f"{interaction.user.mention} challenges {member.mention} to fight!\n\n{member.mention} do u accept?", color=discord.Color.red())
 
-        members = [interaction.user, member]
+            members = [interaction.user, member]
 
-        await interaction.response.send_message(embed=embed, view=AcceptView(members))
-    
+            await interaction.response.send_message(embed=embed, view=AcceptView(members))
+        
+        except discord.Forbidden as e:
+            print(f"I cant do that!\n{e}")
 
 async def setup(bot):
     await bot.add_cog(Pet_fight(bot))
