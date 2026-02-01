@@ -6,6 +6,7 @@ from asyncio import sleep
 from discord.ui import DynamicItem, TextInput, Modal
 import wavelink
 from math import ceil
+from random import randint
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -459,4 +460,176 @@ class Queue_View(discord.ui.View):
         self.update_buttons()
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
+class AcceptView(discord.ui.View):
+
+    def __init__(self, members : list):
+        super().__init__(timeout=None)
+        self.members = members
+
+    async def get_database_cog(self):
+        '''
+        Returns the Database cog instance.
+
+        Returns:
+            Database cog or None if cog is not loaded.
+        '''
+        return self.bot.get_cog("Database")
+
+    async def get_member(self, discord_Obj):
+        '''
+        Retrieves guild data from database.
+
+        Arguments:
+            discord_Obj: Discord Object (Interaction, Member, Role or Channel).
+
+        Returns:
+            dict: Guild member_data dict or None is something went wrong.
+        '''
+        database_cog = await self.get_database_cog()
+        member_data = await database_cog.find_or_create__member(discord_Obj)
+        if member_data is None:
+            return None
+        return member_data
+
+    @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
+    async def accept_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+
+        if interaction.user.id != self.members[1].id:
+            await interaction.response.send_message("It's not your battle!", ephemeral=True)
+            return
+
+        self.bot = interaction.client
+
+        data1 = await self.get_member(self.members[0])
+        data2 = await self.get_member(self.members[1])
+
+        player1 = BattlePlayer(self.members[0], data1)
+        player2 = BattlePlayer(self.members[1], data2)
+
+        embed = Embed(title="Challange was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
+
+        await interaction.response.edit_message(embed=embed, view=BattleView([player1, player2]))
+
+    @discord.ui.button(label="Deny", style=discord.ButtonStyle.red)
+    async def deny_button(self, interaction : discord.Interaction, button : discord.ui.Button):
         
+        if interaction.user.id != self.members[1].id:
+            await interaction.response.send_message("It's not your battle!", ephemeral=True)
+            return
+            
+        embed = Embed(title="What a coward...", description=f"{self.members[1].mention} has denied {self.members[0].mention} challenge!", color=discord.Colour.dark_gray())
+
+        await interaction.response.edit_message(embed=embed, view=None)
+
+        self.stop()
+
+
+class BattleView(discord.ui.View):
+    def __init__(self, players : list):
+        super().__init__(timeout=None)
+        self.members = players
+
+        self.turn = 1;
+        self.curr_playing = self.members[self.turn].member_id
+
+    async def update_buttons(self, interaction : discord.Interaction):
+        self.turn = not self.turn
+        self.curr_playing = self.members[self.turn].member_id
+
+        victory_message = "The challange was won by "
+        end = False
+
+        if(self.members[0].pet_hp <= 0):
+            victory_message += self.members[1].member_name
+            end = True
+        elif(self.members[1].pet_hp <= 0):
+            victory_message += self.members[0].member_name
+            end = True
+
+        if(end):
+            victory_message += ", congratulations!"
+            embed = Embed(title="BATTLE HAS COME TO AN END!", description=victory_message, color=discord.Colour.green())
+
+            await interaction.response.edit_message(embed=embed, view=None)
+
+            self.stop()
+            return False
+        return True
+    
+    @discord.ui.button(label="Attack", style=discord.ButtonStyle.danger)
+    async def normal_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
+
+        if interaction.user.id != self.curr_playing:
+            await interaction.response.send_message("Its not your turn yet!")
+            return
+        
+        damage_to_deal = self.members[self.turn].pet_atk
+
+        await self.members[not self.turn].recive_damage(damage_to_deal)
+
+
+        embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealed {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
+
+        embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
+        embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
+        
+        state = await self.update_buttons(interaction)
+
+        if(state):
+            await interaction.response.edit_message(embed=embed, view=self)
+
+
+    @discord.ui.button(label="Charged attack", style=discord.ButtonStyle.danger)
+    async def charged_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
+        pass
+        # to be added
+
+    @discord.ui.button(label="Healing", style=discord.ButtonStyle.danger)
+    async def healing(self, interaction : discord.Interaction, button : discord.ui.Button):
+
+        if interaction.user.id != self.curr_playing:
+            await interaction.response.send_message("Its not your turn yet!")
+            return
+
+        embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {await self.members[self.turn].regen()}", color=discord.Colour.red())
+
+        embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
+        embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
+        
+        state = await self.update_buttons(interaction)
+
+        if(state):
+            await interaction.response.edit_message(embed=embed, view=self)
+
+
+class BattlePlayer:
+    def __init__(self, member : discord.Member, data_from_db : dict):
+
+        self.member_id = member.id
+        self.member_name = member.name
+        self.pet_name = data_from_db.get("active_pet", 0)
+        self.pet_hp = 100
+        self.pet_atk = data_from_db.get("inventory", {}).get(self.pet_name, {}).get("atk", 0)
+        self.pet_def = data_from_db.get("inventory", {}).get(self.pet_name, {}).get("def", 0)
+
+    async def id(self):
+        return self.member_id
+
+    async def recive_damage(self, damage : int):
+
+        multipli = randint(0,5)
+        multipli //= 10
+        multipli += 1
+
+        self.pet_hp -= int(damage * multipli // (self.pet_def * 0.05))
+
+    async def regen(self):
+        
+        healed_for = randint(10,20)
+
+        self.pet_hp += healed_for
+
+        if self.pet_hp > 100:
+            self.pet_hp = 100
+
+        return healed_for
