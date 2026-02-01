@@ -5,6 +5,9 @@ from discord import app_commands
 from .views import AcceptView
 
 class Pet_fight(commands.Cog):
+    '''
+    Cog responsible for pet fights between members.
+    '''
     def __init__(self, bot):
         '''
         Initializes the pet fight cog.
@@ -41,8 +44,15 @@ class Pet_fight(commands.Cog):
     
 
     @app_commands.command(name="battle", description="Test your pet in battle!")
-    @app_commands.describe(member="Your oppenent!")
+    @app_commands.describe(member="Your opponent!")
     async def battle(self, interaction : discord.Interaction, member : discord.Member):
+        '''
+        Creates embed and links it with view.
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            member (discord.Member): Member challenged to the fight.
+        '''
         
         if member.id == interaction.user.id:
             await interaction.response.send_message("U cant fight with yourself!", ephemeral=True)

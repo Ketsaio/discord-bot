@@ -463,6 +463,12 @@ class Queue_View(discord.ui.View):
 class AcceptView(discord.ui.View):
 
     def __init__(self, members : list):
+        '''
+        Initializes the view for accepting challenge.
+
+        Arguments:
+            members (list): List containing two fighters.
+        '''
         super().__init__(timeout=None)
         self.members = members
 
@@ -493,7 +499,14 @@ class AcceptView(discord.ui.View):
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
     async def accept_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+        '''
+        Creates an accept button used to accept challenge.
+        If interacted with, it prepares everything needed to battle and edits the original embed.
 
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            button (discord.ui.Button): Button that was clicked.
+        '''
         if interaction.user.id != self.members[1].id:
             await interaction.response.send_message("It's not your battle!", ephemeral=True)
             return
@@ -506,13 +519,20 @@ class AcceptView(discord.ui.View):
         player1 = BattlePlayer(self.members[0], data1)
         player2 = BattlePlayer(self.members[1], data2)
 
-        embed = Embed(title="Challange was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
+        embed = Embed(title="Challenge was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
 
         await interaction.response.edit_message(embed=embed, view=BattleView([player1, player2]))
 
     @discord.ui.button(label="Deny", style=discord.ButtonStyle.red)
     async def deny_button(self, interaction : discord.Interaction, button : discord.ui.Button):
-        
+        '''
+        Creates a deny button used to deny chellenge.
+        If interacted with it removes the buttons and stops the view.
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            button (discord.ui.Button): Button that was clicked.
+
+        '''
         if interaction.user.id != self.members[1].id:
             await interaction.response.send_message("It's not your battle!", ephemeral=True)
             return
@@ -526,6 +546,12 @@ class AcceptView(discord.ui.View):
 
 class BattleView(discord.ui.View):
     def __init__(self, players : list):
+        '''
+        Initializes BattleView used for battle sequence.
+        
+        Arguments:
+            players (list): List with two BattlePlayer objects.
+        '''
         super().__init__(timeout=None)
         self.members = players
 
@@ -533,10 +559,16 @@ class BattleView(discord.ui.View):
         self.curr_playing = self.members[self.turn].member_id
 
     async def update_buttons(self, interaction : discord.Interaction):
+        '''
+        Function responsible for changing turns and end the game.
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+        '''
         self.turn = not self.turn
         self.curr_playing = self.members[self.turn].member_id
 
-        victory_message = "The challange was won by "
+        victory_message = "The challenge was won by "
         end = False
 
         if(self.members[0].pet_hp <= 0):
@@ -558,17 +590,23 @@ class BattleView(discord.ui.View):
     
     @discord.ui.button(label="Attack", style=discord.ButtonStyle.danger)
     async def normal_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
+        '''
+        Creates a button responsible for attack move, deducting hp from opponent and editing original embed.
 
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            button (discord.ui.Button): Button that was clicked.
+        '''
         if interaction.user.id != self.curr_playing:
             await interaction.response.send_message("Its not your turn yet!")
             return
         
         damage_to_deal = self.members[self.turn].pet_atk
 
-        await self.members[not self.turn].recive_damage(damage_to_deal)
+        self.members[not self.turn].receive_damage(damage_to_deal)
 
 
-        embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealed {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
+        embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealt {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
 
         embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
         embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
@@ -578,20 +616,20 @@ class BattleView(discord.ui.View):
         if(state):
             await interaction.response.edit_message(embed=embed, view=self)
 
-
-    @discord.ui.button(label="Charged attack", style=discord.ButtonStyle.danger)
-    async def charged_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
-        pass
-        # to be added
-
     @discord.ui.button(label="Healing", style=discord.ButtonStyle.danger)
     async def healing(self, interaction : discord.Interaction, button : discord.ui.Button):
+        '''
+        Button responible for healing action, adding hp to player pet and editing the original embed.
 
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            button (discord.ui.Button): Button that was clicked.
+        '''
         if interaction.user.id != self.curr_playing:
             await interaction.response.send_message("Its not your turn yet!")
             return
 
-        embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {await self.members[self.turn].regen()}", color=discord.Colour.red())
+        embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {self.members[self.turn].regen()}", color=discord.Colour.red())
 
         embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
         embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
@@ -604,7 +642,13 @@ class BattleView(discord.ui.View):
 
 class BattlePlayer:
     def __init__(self, member : discord.Member, data_from_db : dict):
+        '''
+        Initializes the BattlePlayer instance.
 
+        Arguments:
+            member (discord.Member): Member data from discord.
+            data_from_db (dict): Member data from database.
+        '''
         self.member_id = member.id
         self.member_name = member.name
         self.pet_name = data_from_db.get("active_pet", 0)
@@ -612,19 +656,29 @@ class BattlePlayer:
         self.pet_atk = data_from_db.get("inventory", {}).get(self.pet_name, {}).get("atk", 0)
         self.pet_def = data_from_db.get("inventory", {}).get(self.pet_name, {}).get("def", 0)
 
-    async def id(self):
+    def id(self):
+        '''
+        Method responsible for returning member id.
+
+        Returns:
+            member_id (int): Member id.
+        '''
         return self.member_id
 
-    async def recive_damage(self, damage : int):
-
+    def receive_damage(self, damage : int):
+        '''
+        Method responsible for receiving damage, deducts calculated hp from pet.
+        '''
         multipli = randint(0,5)
-        multipli //= 10
+        multipli /= 10
         multipli += 1
 
         self.pet_hp -= int(damage * multipli // (self.pet_def * 0.05))
 
-    async def regen(self):
-        
+    def regen(self):
+        '''
+        Method responsible for regenerating your pet health.
+        '''
         healed_for = randint(10,20)
 
         self.pet_hp += healed_for
