@@ -74,12 +74,14 @@ class Database(commands.Cog):
                     "welcome" : {
                         "enabled" : False,
                         "channel_id" : 0,
-                        "message" : None
+                        "message" : None,
+                        "description" : None
                     },
                     "leave" : {
                         "enabled" : False,
                         "channel_id" : 0,
-                        "message" : None
+                        "message" : None,
+                        "description" : None
                     },
                     "automod": {
                         "banned_words" : [
