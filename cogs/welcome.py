@@ -1,6 +1,7 @@
 from discord.ext import commands
 from discord import app_commands, Embed
 import discord
+from pymongo.errors import PyMongoError
 
 class Welcome(commands.Cog):
 
@@ -39,71 +40,110 @@ class Welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member : discord.Member):
+        '''
+        Listens for members joining server.
+
+        Arguments:
+            member (discord.Member) : New member.
+        '''
+        try:
+            guild_data = await self.get_guild(member)
+
+            if not guild_data:
+                return
+
+            welcome_settings = guild_data.get("welcome", {})
+
+            if(not welcome_settings.get("enabled", False)):
+                return
+            
+            if(member.id == self.bot.user.id):
+                return
+            
+            if(not welcome_settings.get("message")):
+                title = self.title
+            else:
+                title = welcome_settings.get("message")
+
+            if(not welcome_settings.get("description")):
+                embed_desc = self.description
+            else:
+                embed_desc = welcome_settings.get("description")
+
+            embed_desc = embed_desc.replace("{mention}", member.mention)
+
+            embed = Embed(title=title, description=embed_desc, color=discord.Colour.random())
+
+            embed.set_image(url=member.display_avatar.url)
+
+            channel_id = welcome_settings.get("channel_id")
+
+            if not channel_id:
+                return
+
+            if(not channel_id):
+                return
+
+            channel = member.guild.get_channel(channel_id)
+
+            await channel.send(embed=embed)
         
-        guild_data = await self.get_guild(member)
-        welcome_settings = guild_data.get("welcome", {})
-
-
-        if(not welcome_settings.get("enabled", False)):
-            return
-        
-        if(member.id == self.bot.user.id):
-            return
-        
-        if(not welcome_settings.get("message")):
-            title = self.title
-        else:
-            title = welcome_settings.get("message")
-
-        if(not welcome_settings.get("description")):
-            embed_desc = self.description
-        else:
-            embed_desc = welcome_settings.get("description")
-
-        embed_desc = embed_desc.replace("{mention}", member.mention)
-
-        embed = Embed(title=title, description=embed_desc, color=discord.Colour.random())
-
-        embed.set_image(url=member.display_avatar.url)
-
-        channel_id = welcome_settings.get("channel_id")
-
-        if(not channel_id):
-            return
-
-        channel = member.guild.get_channel(channel_id)
-
-        await channel.send(embed=embed)
+        except discord.Forbidden as e:
+            print(f"Forbidden on_member_join: {e}")
 
     @app_commands.command(name="turn_welcome_messages", description="Turn on/off welcome messages for this discord server!")
     async def turn_welcome(self, interaction : discord.Interaction):
+        '''
+        Turns on/off welcome messages.
 
-        guild_data = await self.get_guild(interaction)
-        welcome_state = guild_data.get("welcome", {}).get("enabled")
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+        '''
+        try:
+            guild_data = await self.get_guild(interaction)
 
-        await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"welcome.enabled" : not welcome_state}})
+            if not guild_data:
+                return
 
-        await interaction.response.send_message(f"Welcome messages are now {'enabled' if not welcome_state else 'disabled'}!")
+            welcome_state = guild_data.get("welcome", {}).get("enabled")
+
+            await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"welcome.enabled" : not welcome_state}})
+
+            await interaction.response.send_message(f"Welcome messages are now {'enabled' if not welcome_state else 'disabled'}!")
+        
+        except PyMongoError as e:
+            print(f"PyMongoError in turn_welcome : {e}")
 
     @app_commands.command(name="welcome_messages_setup", description="Setup everything needed for welcome messages!")
     @app_commands.describe(channel_name="Channel name", title="Your custom title of welcome message embed!", desc="Your desc, {mention} will mention member!")
     async def setup_wm(self, interaction : discord.Interaction, channel_name : discord.TextChannel, title : str = "", desc : str = ""):
+        '''
+        Sets up welcome messages on the server.
 
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+            channel_name (discord.TextChannel): Channel where welcome messages will be send.
+            title (str): Optional custom embed title.
+            desc (str): Optional custom embed description.  
+        '''
+        try:
+            if(not channel_name):
+                await interaction.response.send_message("Wrong channel name!", ephemeral=True)
+                return
 
-        if(not channel_name):
-            await interaction.response.send_message("Wrong channel name!", ephemeral=True)
-            return
+            update = {"welcome.channel_id" : channel_name.id, "welcome.enabled" : True}
 
-        update = {"welcome.channel_id" : channel_name.id, "welcome.enabled" : True}
+            if(title):
+                update["welcome.message"] = title
+            if(desc):
+                update["welcome.description"] = desc
 
-        if(title):
-            update["welcome.message"] = title
-        if(desc):
-            update["welcome.description"] = desc
+            await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : update})
 
-        await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : update})
+            await interaction.response.send_message("Welcome messages are ready to welcome!", ephemeral=True)
 
-        await interaction.response.send_message("Welcome messages are ready to welcome!", ephemeral=True)
+        except PyMongoError as e:
+            print(f"PyMongoError in setup_wm : {e}")
     
 
 async def setup(bot):
