@@ -142,7 +142,7 @@ class Database(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         """
-        Listen for bot joiningthe guild, then creates documents for guild in database if it doesn't exist.
+        Listen for bot joining the guild, then creates documents for guild in database if it doesn't exist.
 
         Arguments:
             guild (discord.guild): Guild data.
@@ -156,6 +156,15 @@ class Database(commands.Cog):
             logger.exception(f"PyMongoError in Database.on_guild_join: {e}")
 
     async def find_or_create__member(self, discord_Obj):
+        """
+        Finds or creates members in database.
+
+        Arguments:
+            discord_Obj: Discord object (Interaction, Channel, Member, Message).
+
+        Returns:
+            dict: Member data document from database or None if error occured.
+        """
         member_id = None
         if isinstance(discord_Obj, discord.Interaction):
             member_id = str(discord_Obj.user.id)
@@ -175,6 +184,12 @@ class Database(commands.Cog):
             return None
 
     async def add_member_to_database(self, member_id : int):
+        """
+        Add member to database.
+
+        Arguments:
+            member_id (int): Id of the discord member.
+        """
         try:
             await self.bot.database["users"].insert_one({
                 "_id" : str(member_id),
@@ -192,9 +207,6 @@ class Database(commands.Cog):
             })
         except PyMongoError as e:
             logger.exception(f"PyMongoError in Database.add_member_to_database: {e}")
-        
-    async def check_instance(self, discord_Obj):
-        pass
 
 async def setup(bot):
-    await bot.add_cog(Database(bot))     # Register the cog with the bot
+    await bot.add_cog(Database(bot))

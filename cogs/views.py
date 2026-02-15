@@ -45,8 +45,8 @@ class TicketView(discord.ui.View):
 
             await channel.send(embed=embed, view=InTicketView())
         
-        except (discord.Forbidden, PermissionError) as e:
-            print(f"Error in TicketView: {e}")
+        except discord.PermissionError:
+            await interaction.followup.send("U cant do that!", ephemeral=True)
 
 class InTicketView(discord.ui.View):
     def __init__(self):
@@ -79,8 +79,8 @@ class InTicketView(discord.ui.View):
 
             await interaction.followup.send(embed=embed2, view=AfterTicketView())
 
-        except (discord.Forbidden, PermissionError) as e:
-            print(f"Error in TicketView: {e}")
+        except discord.PermissionError:
+            await interaction.followup.send("U cant do that!", ephemeral=True)
 
 class AfterTicketView(discord.ui.View):
     def __init__(self):
@@ -109,8 +109,8 @@ class AfterTicketView(discord.ui.View):
 
             await interaction.channel.delete()
 
-        except (discord.Forbidden, PermissionError) as e:
-            print(f"Error in TicketView: {e}")
+        except discord.PermissionError:
+            await interaction.followup.send("U cant do that!", ephemeral=True)
 
     @discord.ui.button(label = "📝 Log", style = discord.ButtonStyle.gray, custom_id="view_logs_in_ticket")
     async def log(self, interaction : discord.Interaction, button: discord.ui.Button):
@@ -145,8 +145,8 @@ class AfterTicketView(discord.ui.View):
             await interaction.followup.send(file=discord.File(fp=buffer, filename=file_name))
             buffer.close()
 
-        except (discord.Forbidden, PermissionError) as e:
-            print(f"Error in TicketView: {e}")
+        except discord.PermissionError:
+            await interaction.followup.send("U cant do that!", ephemeral=True)
 
 
 class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id>[0-9]+)'):
