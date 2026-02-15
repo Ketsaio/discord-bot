@@ -5,6 +5,10 @@ from datetime import datetime, timedelta, timezone
 import asyncio
 from pymongo.errors import PyMongoError
 import re
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Automod(commands.Cog):
     """
@@ -31,12 +35,10 @@ class Automod(commands.Cog):
         """
         if not role:
             return
-        try:
-            if member.top_role >= role.guild.me.top_role:
-                return
-            await member.add_roles(role)
-        except (discord.Forbidden, discord.HTTPException):
-            pass
+        
+        if member.top_role >= role.guild.me.top_role:
+            return
+        await member.add_roles(role)
 
     async def safe_remove_role(self, member: discord.Member, role: discord.Role):
         """
@@ -48,10 +50,8 @@ class Automod(commands.Cog):
         """
         if not role:
             return
-        try:
-            await member.remove_roles(role)
-        except (discord.Forbidden, discord.HTTPException):
-            pass
+        
+        await member.remove_roles(role)
 
     async def get_banned_words(self, discord_Obj):
         """
@@ -109,32 +109,22 @@ class Automod(commands.Cog):
         Returns:
             tuple: Every jail utility needed, (jail_role, jail_category, jail_text, jail_vc) or None if something goes wrong.
         """
-        try:
-            jail_role = await interaction.guild.create_role(name = "Jail", permissions=discord.Permissions.none(), color=discord.Colour.dark_gray(), hoist=True, mentionable=True)
+        jail_role = await interaction.guild.create_role(name = "Jail", permissions=discord.Permissions.none(), color=discord.Colour.dark_gray(), hoist=True, mentionable=True)
 
-            overwrites = {
-                    interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
-                    jail_role: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True, use_application_commands=True)
-                }  
-            
-            for chan in interaction.guild.channels:
-                    await chan.set_permissions(jail_role, overwrite=discord.PermissionOverwrite(view_channel=False))
-                    await asyncio.sleep(0.1)
+        overwrites = {
+                interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                jail_role: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True, use_application_commands=True)
+            }  
+        
+        for chan in interaction.guild.channels:
+                await chan.set_permissions(jail_role, overwrite=discord.PermissionOverwrite(view_channel=False))
+                await asyncio.sleep(0.1)
 
-            jail_category = await interaction.guild.create_category(name="Jail", overwrites=overwrites, reason="Category for jailed people")
-            jail_text = await interaction.guild.create_text_channel(name="jail-chat", category=jail_category, reason="Here jailed people can text")
-            jail_vc = await interaction.guild.create_voice_channel(name="Jail Voice", category=jail_category, reason="Here jailed people can talk")
+        jail_category = await interaction.guild.create_category(name="Jail", overwrites=overwrites, reason="Category for jailed people")
+        jail_text = await interaction.guild.create_text_channel(name="jail-chat", category=jail_category, reason="Here jailed people can text")
+        jail_vc = await interaction.guild.create_voice_channel(name="Jail Voice", category=jail_category, reason="Here jailed people can talk")
 
-            return jail_role, jail_category, jail_text, jail_vc
-        except discord.Forbidden:
-            print("Can't create jail utilities (create_jail_utilities, Automod)")
-            return None
-        except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (create_jail_utilities, Automod)")
-            return None
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return
+        return jail_role, jail_category, jail_text, jail_vc
 
     async def get_database_cog(self):
         """
@@ -237,13 +227,8 @@ class Automod(commands.Cog):
         words = re.findall(r'\b\w+\b', message.content.lower())
 
         if any(word in banned_words for word in words):
-            try:
-                await message.delete()
-                await message.author.send(f"Please don't swear {message.author.mention}, a word from your sentence is prohibited on ***{message.guild.name}***")
-            except discord.Forbidden:
-                print("Bot does not have permission to delete messages or DM the user.")
-            except discord.HTTPException as e:
-                print(f"Discord HTTP error: {e}")
+            await message.delete()
+            await message.author.send(f"Please don't swear {message.author.mention}, a word from your sentence is prohibited on ***{message.guild.name}***")
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role : discord.Role):
@@ -318,22 +303,17 @@ class Automod(commands.Cog):
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
-        try:
-            older, newer = await self.categorize_messages(interaction, amount)
+        older, newer = await self.categorize_messages(interaction, amount)
 
-            deleted_newer = await interaction.channel.purge(limit=len(newer))
-            
-            for message in older:
-                await message.delete()
-                await asyncio.sleep(0.6)
+        deleted_newer = await interaction.channel.purge(limit=len(newer))
+        
+        for message in older:
+            await message.delete()
+            await asyncio.sleep(0.6)
 
-            deleted_messages = len(deleted_newer) + len(older)
+        deleted_messages = len(deleted_newer) + len(older)
 
-            await interaction.followup.send(f"Cleared {deleted_messages} messages!", ephemeral=True)
-        except discord.Forbidden:
-            print("Can't delete messages, (delete_messages, Automod)")
-        except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (delete_messages, Automod)")
+        await interaction.followup.send(f"Cleared {deleted_messages} messages!", ephemeral=True)
 
     @app_commands.command(name = "jail_setup", description = "Prepares jail channel and role for jail command (can take a while if u have many channels)")
     async def setup_jail(self, interaction : discord.Interaction):
@@ -370,7 +350,7 @@ class Automod(commands.Cog):
                     try:
                         await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"automod.jail.enabled" : True, "automod.jail.jail_role" : jail_role.id, "automod.jail.jail_category" : jail_category.id, "automod.jail.jail_text" : jail_text.id, "automod.jail.jail_vc" : jail_vc.id}})
                     except PyMongoError as e:
-                        print(f"PymongoError (setup_jail, Automod): {e}")
+                        logger.exception(f"PyMongoError in Automod.setup_jail: {e}")
 
                     await interaction.followup.send("Jail has been created", ephemeral=True)
         else:
@@ -432,15 +412,8 @@ class Automod(commands.Cog):
             await interaction.response.send_message("I dont have permissions to do that!")
             return
 
-        try:
-            await member.ban()
-            await interaction.response.send_message(f"{member.name} has been banned!", ephemeral=True)
-        except discord.Forbidden:
-            print("Can't ban member, (ban, Automod)")
-        except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (ban, Automod)")
-        except Exception as e:
-            print(f"Unexpected error: {e}")
+        await member.ban()
+        await interaction.response.send_message(f"{member.name} has been banned!", ephemeral=True)
 
     @app_commands.command(name="timeout", description = "Timeout user")
     @app_commands.describe(member = "Person to timeout", time = "How much time? (in minutes)")
@@ -461,19 +434,12 @@ class Automod(commands.Cog):
             await interaction.response.send_message("I dont have permissions to do that!")
             return
         
-        try:
-            if member.is_timed_out():
-                await member.timeout(None)
-                await interaction.response.send_message(f"{member.name} can speak again")
-            else:
-                await member.timeout(datetime.now(timezone.utc) + timedelta(minutes=time))
-                await interaction.response.send_message(f"{member.name} has been timeouted")
-        except discord.Forbidden:
-            print("Can't timeout member, (timeout, Automod)")
-        except discord.HTTPException:
-            print("Something happend on line discord API - discord Bot, (timeout, Automod)")
-        except Exception as e:
-            print(f"Unexpected error: {e}")
+        if member.is_timed_out():
+            await member.timeout(None)
+            await interaction.response.send_message(f"{member.name} can speak again")
+        else:
+            await member.timeout(datetime.now(timezone.utc) + timedelta(minutes=time))
+            await interaction.response.send_message(f"{member.name} has been timeouted")
 
     @app_commands.command(name="add_to_bad_words", description="Adds word to banned words in guild")
     @app_commands.describe(bad_word="Bad word that will be banned from this guild")
@@ -519,7 +485,7 @@ class Automod(commands.Cog):
                 self.guild_banned_words.pop(interaction.guild_id)
             await interaction.followup.send(f"{bad_word} has been {action}")
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Automod.add_bad_word: {e}")
             return None
         
     @app_commands.command(name="check_messages_for_bad_words", description="Enable/disable checking every message for potential bad words")

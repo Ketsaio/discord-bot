@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 from os import getenv
 from .views import MenuForMusic, Queue_View
 from typing import Literal
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Music_player(commands.Cog):
     '''
@@ -222,8 +224,8 @@ class Music_player(commands.Cog):
                     await player.play(tracks[0])
                 else:
                     player.queue.put(tracks[0])
-            except (discord.Forbidden, discord.ClientException, Exception) as e:
-                print(f"Error on music button callback! {e}")
+            except discord.ClientException as e:
+                logger.error(f"ClientException in Music_player.play: {e}")
 
         else:
 
@@ -282,29 +284,26 @@ class Music_player(commands.Cog):
             bool: True, if user is not in the same channel, else False.
         '''
         player : wavelink = interaction.guild.voice_client
-        try:   
-            if not interaction.user.voice:
-                msg = "Join channel to use me!"
+        if not interaction.user.voice:
+            msg = "Join channel to use me!"
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+            return True
+
+        if player and player.playing:
+            if interaction.user.voice.channel.id != player.channel.id:
+
+                msg = f"Bot is playing music on {player.channel} voice channel!"
+
                 if interaction.response.is_done():
                     await interaction.followup.send(msg, ephemeral=True)
                 else:
                     await interaction.response.send_message(msg, ephemeral=True)
                 return True
-
-            if player and player.playing:
-                if interaction.user.voice.channel.id != player.channel.id:
-
-                    msg = f"Bot is playing music on {player.channel} voice channel!"
-
-                    if interaction.response.is_done():
-                        await interaction.followup.send(msg, ephemeral=True)
-                    else:
-                        await interaction.response.send_message(msg, ephemeral=True)
-                    return True
-                
-            return False
-        except discord.Forbidden as e:
-                print(f"Cant send message! {e}")
+            
+        return False
 
 
 async def setup(bot):

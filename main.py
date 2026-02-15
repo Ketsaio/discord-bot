@@ -5,8 +5,12 @@ from discord import app_commands
 from discord.ext import commands
 from pymongo import AsyncMongoClient
 from cogs.views import TicketView, InTicketView, AfterTicketView, DynamicRoleButton
+import logging
+import datetime
 
 load_dotenv() # loads .env
+
+logger = logging.getLogger(__name__)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO = os.getenv("MONGO_URL")
@@ -31,6 +35,9 @@ class MyBot(commands.Bot):
         self.synced = False
 
     async def setup_hook(self):
+
+        self.tree.on_error = self.on_tree_error
+
         for file in os.listdir("cogs"):         # loads all .py files from cogs folder as extentions
             if file.endswith(".py") and file != "views.py":
                 await self.load_extension(f"cogs.{file[:-3]}")
@@ -44,7 +51,53 @@ class MyBot(commands.Bot):
         self.add_dynamic_items(DynamicRoleButton)
         print("Loaded all Dynamic Items!")
 
+    async def on_tree_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+            if isinstance(error, app_commands.CommandInvokeError):
+                error = error.original
 
+            if interaction.command:
+                cmd_name = interaction.command.callback.__name__
+                cog_name = interaction.command.binding.__class__.__name__ if interaction.command.binding else "NoCog"
+            else:
+                cmd_name = "Unknown"
+                cog_name = "Interaction"
+
+            location = f"{cog_name}.{cmd_name}"
+            
+            if isinstance(error, discord.NotFound):
+                return
+            
+            if isinstance(error, discord.Forbidden):
+                logger.warning(f"Forbidden error in '{location}': {error}")
+                msg = "I don't have enough permissions to perform this action!"
+                return await self._respond_to_error(interaction, msg)
+
+            if isinstance(error, discord.HTTPException):
+                logger.error(f"Discord API Error in '{location}': {error}")
+                msg = "A connection error occurred with Discord servers."
+                return await self._respond_to_error(interaction, msg)
+
+            if isinstance(error, ValueError):
+                logger.warning(f"Value error in '{location}': {error}")
+                msg = "Invalid value provided for this command."
+                return await self._respond_to_error(interaction, msg)
+
+            if isinstance(error, app_commands.CommandOnCooldown):
+                msg = f"Command is on cooldown. Try again in {error.retry_after:.2f}s."
+                return await self._respond_to_error(interaction, msg)
+
+            logger.error(f"Unhandled error in '{location}':", exc_info=error)
+            msg = "An unexpected error occurred. The developers have been notified."
+            await self._respond_to_error(interaction, msg)
+
+    async def _respond_to_error(self, interaction: discord.Interaction, message: str):
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(message, ephemeral=True)
+            else:
+                await interaction.response.send_message(message, ephemeral=True)
+        except:
+            pass
 
 bot = MyBot(command_prefix="?", database = database)
 
@@ -58,4 +111,12 @@ async def on_ready():
     
     bot.synced = True
 
-bot.run(TOKEN)
+if __name__ == "__main__":
+    
+    date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    logging_handler = logging.FileHandler(filename=f"discord_{date_str}.log", encoding="UTF-8", mode="a")
+
+    discord.utils.setup_logging(handler=logging_handler, level=logging.INFO)
+    
+    bot.run(TOKEN)

@@ -1,6 +1,9 @@
 from discord.ext import commands
 import discord
 from pymongo.errors import PyMongoError
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Database(commands.Cog):
     """
@@ -29,7 +32,7 @@ class Database(commands.Cog):
             if member_in_database is None:
                 await self.add_member_to_database(member)
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Database.on_member_join: {e}")
 
     async def find_or_create_guild(self, discord_Obj) -> dict:
         """
@@ -56,7 +59,7 @@ class Database(commands.Cog):
                 guild_data = await self.bot.database["guilds"].find_one({"_id": guild_id})
             return guild_data
         except PyMongoError as e:
-            print(f"PyMongo error {e}")
+            logger.exception(f"PyMongoError in Database.find_or_create_guild: {e}")
             return None
 
     async def add_guild_to_database(self, guild):
@@ -122,7 +125,7 @@ class Database(commands.Cog):
                     }
                 })
         except PyMongoError as e:
-            print(f"PyMongoError : {e}")
+            logger.exception(f"PyMongoError in Database.add_guild_to_database: {e}")
 
     async def disable_jail(self, discord_Obj):
         """
@@ -134,7 +137,7 @@ class Database(commands.Cog):
         try:
             await self.bot.database["guilds"].update_one({"_id" : str(discord_Obj.guild.id)}, {"$set" : {"automod.jail.enabled" : False}})
         except PyMongoError as e:
-            print(f"PyMongo error {e}")
+            logger.exception(f"PyMongoError in Database.add_guild_to_database: {e}")
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -150,7 +153,7 @@ class Database(commands.Cog):
             if guild_in_database is None:
                 await self.add_guild_to_database(guild)
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Database.on_guild_join: {e}")
 
     async def find_or_create__member(self, discord_Obj):
         member_id = None
@@ -168,7 +171,7 @@ class Database(commands.Cog):
                 user_data = await self.bot.database["users"].find_one({"_id" : member_id})
             return user_data
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Database.find_or_create_member: {e}")
             return None
 
     async def add_member_to_database(self, member_id : int):
@@ -188,7 +191,7 @@ class Database(commands.Cog):
                 "active_pet" : None
             })
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Database.add_member_to_database: {e}")
         
     async def check_instance(self, discord_Obj):
         pass

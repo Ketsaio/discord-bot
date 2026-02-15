@@ -63,15 +63,12 @@ class Tickets(commands.Cog):
             await interaction.response.send_message("I dont have permissions to do that!")
             return
 
-        try:
-            embed = Embed(
-                title="Siemano",
-                description="Aby stworzyć ticket kliknij przycisk niżej!",
-                color=discord.Color.dark_green()
-            )
-            await interaction.response.send_message(embed=embed, view=TicketView())
-        except discord.Forbidden as e:
-            print(f"discord Forbidden in tickets: {e}")
+        embed = Embed(
+            title="Siemano",
+            description="Aby stworzyć ticket kliknij przycisk niżej!",
+            color=discord.Color.dark_green()
+        )
+        await interaction.response.send_message(embed=embed, view=TicketView())
 
 async def setup(bot):
     await bot.add_cog(Tickets(bot))

@@ -6,6 +6,9 @@ import aiohttp
 from os import getenv
 from dotenv import load_dotenv
 from pymongo.errors import PyMongoError
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Pets(commands.Cog):
     '''
@@ -77,7 +80,7 @@ class Pets(commands.Cog):
             
             await self.add_pet_xp(randint(1,5), message)
         except aiohttp.ClientConnectionError as e:
-            print(f"aiohttp error in unicorn: {e}")
+            logger.error(f"Aiohttp Client Connection error in Pets.unicorn: {e}")
 
     async def parrot(self, message : discord.Message):
         '''
@@ -167,7 +170,7 @@ class Pets(commands.Cog):
                 )
                 await message.channel.send(embed=embed)
         except PyMongoError as e:
-            print(f"PyMongo error in add_pet_xp: {e}")
+            logger.exception(f"PyMongoError in Pets.add_pet_xp: {e}")
 
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
@@ -179,12 +182,10 @@ class Pets(commands.Cog):
         '''
         if message.author.bot or not message.guild:
             return
-        try:
-            member_data = await self.get_member(message.author)
-            active_pet = member_data.get("active_pet", 0)
-            await self.pet_selector(active_pet, message)
-        except Exception as e:
-            print(f"on_message error: {e}")
+
+        member_data = await self.get_member(message.author)
+        active_pet = member_data.get("active_pet", 0)
+        await self.pet_selector(active_pet, message)
 
     @app_commands.command(name="change_pet", description="Choose pet to level and fight for you!")
     @app_commands.describe(pet_name="Name of the pet you chose!")
@@ -213,7 +214,9 @@ class Pets(commands.Cog):
                 {"$set" : {"active_pet" : pet_name}}
             )
         except PyMongoError as e:
-            print(f"PyMongo error: {e}")
+            logger.exception(f"PyMongoError in Pets.choose_active_pet")
+            await interaction.response.send_message("Can't change your active pet right now, sorry!", ephemeral=True)
+            return
         embed = discord.Embed(
             title="✅ Active Pet Changed",
             description=f"Your active pet is now **{pet_name}**",

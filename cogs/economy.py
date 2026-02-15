@@ -4,6 +4,9 @@ from discord import app_commands, Embed
 from random import randint
 from pymongo.errors import PyMongoError
 from datetime import datetime, timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Economy(commands.Cog):
     """
@@ -72,7 +75,7 @@ class Economy(commands.Cog):
                 await message.channel.send(embed=embed)
 
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Economy.on_message: {e}")
     
 
     @app_commands.command(name="balance", description="Check your balance!")
@@ -113,7 +116,7 @@ class Economy(commands.Cog):
 
                 await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {hours} godzin i {minutes} minut")
         except PyMongoError as e:
-            print(f"PyMongoError: {e}")
+            logger.exception(f"PyMongoError in Economy.daily_reward: {e}")
 
     @app_commands.command(name="inventory", description="Take a look into your inventory")
     async def inventory(self, interaction : discord.Interaction):

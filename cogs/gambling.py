@@ -6,7 +6,9 @@ from random import randint, choice
 from asyncio import sleep
 from datetime import datetime, timedelta
 from pymongo.errors import PyMongoError
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Gambling(commands.Cog):
     '''
@@ -117,10 +119,8 @@ class Gambling(commands.Cog):
                 )
 
             await interaction.followup.send(embed=embed_result, ephemeral=True)
-        except (ValueError, TypeError) as e:
-            print(f"Value or Type error in slots: {e}")
-        except PyMongoError as MongoE:
-            print(f"PyMongo error in slots: {MongoE}")
+        except PyMongoError as e:
+            logger.exception(f"PyMongoError in Gambling.automats: {e}")
 
                     
 
@@ -169,10 +169,8 @@ class Gambling(commands.Cog):
                 )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
-        except (ValueError, TypeError) as e:
-            print(f"Value or Type error in scratches: {e}")
-        except PyMongoError as MongoE:
-            print(f"PyMongo error in scratches: {MongoE}")
+        except PyMongoError as e:
+             logger.exception(f"PyMongoError in Gambling.scratches: {e}")
 
 
     @app_commands.command(name="roulette", description="Win some money!")
@@ -243,10 +241,8 @@ class Gambling(commands.Cog):
                 )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
-        except (ValueError, TypeError) as e:
-            print(f"Value or Type error in roulette: {e}")
-        except PyMongoError as MongoE:
-            print(f"PyMongo error in roulette: {MongoE}")
+        except PyMongoError as e:
+            logger.exception(f"PyMongoError in Gambling.roulette: {e}")
 
 
     @app_commands.command(name = "crime", description = "go do a crime")
@@ -304,10 +300,8 @@ class Gambling(commands.Cog):
                 )
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-        except (ValueError, TypeError) as e:
-            print(f"Value or Type error in crime: {e}")
-        except PyMongoError as MongoE:
-            print(f"PyMongo error in crime: {MongoE}")
+        except PyMongoError as e:
+            logger.exception(f"PyMongoError in Gambling.crime: {e}")
 
     @app_commands.command(name = "steal", description = "rob someone")
     @app_commands.describe(member = "discord member")
@@ -377,10 +371,8 @@ class Gambling(commands.Cog):
                 )
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-        except (ValueError, TypeError) as e:
-            print(f"Value or Type error in crime: {e}")
-        except PyMongoError as MongoE:
-            print(f"PyMongo error in crime: {MongoE}")
+        except PyMongoError as e:
+            logger.exception(f"PyMongoError in Gambling.steal: {e}")
 
     async def time_left(self, last_smth : datetime, hours : int):
             '''

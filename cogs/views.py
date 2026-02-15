@@ -7,6 +7,9 @@ from discord.ui import DynamicItem, TextInput, Modal
 import wavelink
 from math import ceil
 from random import randint
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TicketView(discord.ui.View):
     def __init__(self):
@@ -170,24 +173,19 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
             interaction (discord.Interaction): Interaction context.
         '''
 
-        try:
-            role = interaction.guild.get_role(self.role_id)
+        role = interaction.guild.get_role(self.role_id)
 
-            if not role:
-                await interaction.response.send_message("This role doesnt exist")
-                return
-            
-            if role in interaction.user.roles:
-                await interaction.user.remove_roles(role)
-            else:
-                await interaction.user.add_roles(role)
-
-            await interaction.response.defer()
+        if not role:
+            await interaction.response.send_message("This role doesnt exist")
+            return
         
-        except discord.Forbidden as e:
-            await interaction.followup.send(f"I cant assign role {role.mention}, missing permissions!", ephemeral=True)
+        if role in interaction.user.roles:
+            await interaction.user.remove_roles(role)
+        else:
+            await interaction.user.add_roles(role)
 
-
+        await interaction.response.defer()
+        
 
 class FinalSetupModal(Modal, title="RR Configuration"):
     def __init__(self, channel, selected_roles):
@@ -243,36 +241,33 @@ class FinalSetupModal(Modal, title="RR Configuration"):
             return None
 
     async def on_submit(self, interaction : discord.Interaction):
-        try:
-            embed = Embed(title=self.title_input.value, description=self.desc_input.value, color=discord.Color.from_str(self.embed_color.value))
+        embed = Embed(title=self.title_input.value, description=self.desc_input.value, color=discord.Color.from_str(self.embed_color.value))
 
-            emojis = list(self.emoji_input.value.split(' '))
+        emojis = list(self.emoji_input.value.split(' '))
 
-            colors = list(self.colors_input.value.split(' '))
+        colors = list(self.colors_input.value.split(' '))
 
-            embed.set_author(name="BrazilBot", icon_url=interaction.client.user.display_avatar.url)
+        embed.set_author(name="BrazilBot", icon_url=interaction.client.user.display_avatar.url)
 
-            view = discord.ui.View(timeout=None)
+        view = discord.ui.View(timeout=None)
 
-            for i, role in enumerate(self.selected_roles):
-                button = DynamicRoleButton(role.id)
-                button.item.label = role.name
+        for i, role in enumerate(self.selected_roles):
+            button = DynamicRoleButton(role.id)
+            button.item.label = role.name
 
-                if i < len(emojis):
-                    button.item.emoji = emojis[i]
+            if i < len(emojis):
+                button.item.emoji = emojis[i]
 
-                if i < len(colors):
-                    try:
-                        button.item.style = self.parse_style(colors[i])
-                    except Exception:
-                        pass
+            if i < len(colors):
+                try:
+                    button.item.style = self.parse_style(colors[i])
+                except Exception:
+                    pass
 
-                view.add_item(button)
+            view.add_item(button)
 
-            await self.channel.send(embed=embed, view=view)
-            await interaction.response.defer()
-        except discord.Forbidden as e:
-            print(f"Bot permission error in FinalSetupModal: {e}")
+        await self.channel.send(embed=embed, view=view)
+        await interaction.response.defer()
 
 
 class RoleSetupView(discord.ui.View):
@@ -364,8 +359,8 @@ class MusicButton(discord.ui.Button):
                 else:
                     await player.play(self.track)
 
-        except (discord.Forbidden, discord.ClientException, Exception) as e:
-            print(f"Error on music button callback! {e}")
+        except discord.ClientException as e:
+            logger.error(f"ClientException in Views.MusicButton.callback: {e}")
 
 
 class MenuForMusic(discord.ui.View):
@@ -511,21 +506,18 @@ class AcceptView(discord.ui.View):
             await interaction.response.send_message("It's not your battle!", ephemeral=True)
             return
 
-        try:
-            self.bot = interaction.client
+        self.bot = interaction.client
 
-            data1 = await self.get_member(self.members[0])
-            data2 = await self.get_member(self.members[1])
+        data1 = await self.get_member(self.members[0])
+        data2 = await self.get_member(self.members[1])
 
-            player1 = BattlePlayer(self.members[0], data1)
-            player2 = BattlePlayer(self.members[1], data2)
+        player1 = BattlePlayer(self.members[0], data1)
+        player2 = BattlePlayer(self.members[1], data2)
 
-            embed = Embed(title="Challenge was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
+        embed = Embed(title="Challenge was accepted!", description=f"{self.members[1].mention}, pick your move!", color=discord.Colour.red())
 
-            await interaction.response.edit_message(embed=embed, view=BattleView([player1, player2]))
+        await interaction.response.edit_message(embed=embed, view=BattleView([player1, player2]))
 
-        except discord.Forbidden as e:
-            print(f"I cant do that!\n{e}")
 
     @discord.ui.button(label="Deny", style=discord.ButtonStyle.red)
     async def deny_button(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -540,16 +532,13 @@ class AcceptView(discord.ui.View):
         if interaction.user.id != self.members[1].id:
             await interaction.response.send_message("It's not your battle!", ephemeral=True)
             return
-            
-        try:
-            embed = Embed(title="What a coward...", description=f"{self.members[1].mention} has denied {self.members[0].mention} challenge!", color=discord.Colour.dark_gray())
 
-            await interaction.response.edit_message(embed=embed, view=None)
+        embed = Embed(title="What a coward...", description=f"{self.members[1].mention} has denied {self.members[0].mention} challenge!", color=discord.Colour.dark_gray())
 
-            self.stop()
+        await interaction.response.edit_message(embed=embed, view=None)
 
-        except discord.Forbidden as e:
-            print(f"I cant do that!\n{e}")
+        self.stop()
+
 
 
 class BattleView(discord.ui.View):
@@ -573,32 +562,29 @@ class BattleView(discord.ui.View):
         Arguments:
             interaction (discord.Interaction): The interaction context.
         '''
-        try:
-            self.turn = not self.turn
-            self.curr_playing = self.members[self.turn].member_id
 
-            victory_message = "The challenge was won by "
-            end = False
+        self.turn = not self.turn
+        self.curr_playing = self.members[self.turn].member_id
 
-            if(self.members[0].pet_hp <= 0):
-                victory_message += self.members[1].member_name
-                end = True
-            elif(self.members[1].pet_hp <= 0):
-                victory_message += self.members[0].member_name
-                end = True
+        victory_message = "The challenge was won by "
+        end = False
 
-            if(end):
-                victory_message += ", congratulations!"
-                embed = Embed(title="BATTLE HAS COME TO AN END!", description=victory_message, color=discord.Colour.green())
+        if(self.members[0].pet_hp <= 0):
+            victory_message += self.members[1].member_name
+            end = True
+        elif(self.members[1].pet_hp <= 0):
+            victory_message += self.members[0].member_name
+            end = True
 
-                await interaction.response.edit_message(embed=embed, view=None)
+        if(end):
+            victory_message += ", congratulations!"
+            embed = Embed(title="BATTLE HAS COME TO AN END!", description=victory_message, color=discord.Colour.green())
 
-                self.stop()
-                return False
-            return True
-        
-        except discord.Forbidden as e:
-            print(f"I cant do that!\n{e}")
+            await interaction.response.edit_message(embed=embed, view=None)
+
+            self.stop()
+            return False
+        return True
     
     @discord.ui.button(label="Attack", style=discord.ButtonStyle.danger)
     async def normal_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -612,24 +598,22 @@ class BattleView(discord.ui.View):
         if interaction.user.id != self.curr_playing:
             await interaction.response.send_message("Its not your turn yet!")
             return
-        try:
-            damage_to_deal = self.members[self.turn].pet_atk
 
-            self.members[not self.turn].receive_damage(damage_to_deal)
+        damage_to_deal = self.members[self.turn].pet_atk
+
+        self.members[not self.turn].receive_damage(damage_to_deal)
 
 
-            embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealt {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
+        embed = Embed(title="BATTLE!", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} dealt {damage_to_deal} to {self.members[not self.turn].member_name}s {self.members[not self.turn].pet_name}", color=discord.Colour.red())
 
-            embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
-            embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
-            
-            state = await self.update_buttons(interaction)
+        embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
+        embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
+        
+        state = await self.update_buttons(interaction)
 
-            if(state):
-                await interaction.response.edit_message(embed=embed, view=self)
+        if(state):
+            await interaction.response.edit_message(embed=embed, view=self)
 
-        except discord.Forbidden as e:
-            print(f"I cant do that!\n{e}")
 
     @discord.ui.button(label="Healing", style=discord.ButtonStyle.danger)
     async def healing(self, interaction : discord.Interaction, button : discord.ui.Button):
@@ -644,19 +628,16 @@ class BattleView(discord.ui.View):
             await interaction.response.send_message("Its not your turn yet!")
             return
 
-        try:
-            embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {self.members[self.turn].regen()}", color=discord.Colour.green())
+        embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {self.members[self.turn].regen()}", color=discord.Colour.green())
 
-            embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
-            embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
-            
-            state = await self.update_buttons(interaction)
+        embed.add_field(name=f"Current hp of {self.members[0].member_name} pet:", value=self.members[0].pet_hp, inline=False)
+        embed.add_field(name=f"Current hp of {self.members[1].member_name} pet:", value=self.members[1].pet_hp, inline=False)
+        
+        state = await self.update_buttons(interaction)
 
-            if(state):
-                await interaction.response.edit_message(embed=embed, view=self)
+        if(state):
+            await interaction.response.edit_message(embed=embed, view=self)
 
-        except discord.Forbidden as e:
-            print(f"I cant do that!\n{e}")
 
 class BattlePlayer:
     def __init__(self, member : discord.Member, data_from_db : dict):
