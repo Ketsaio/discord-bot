@@ -1,44 +1,79 @@
-# discord-bot
-*DISCLAIMER BOT IS STILL IN DEVELOPMENT*
+# 🤖 Discord Bot
 
-• Discord bot wrote in python using mostly discord.py library focused on moderation, economy and other fun features!
+![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
+![Library](https://img.shields.io/badge/discord.py-2.0%2B-purple)
+![Database](https://img.shields.io/badge/MongoDB-Ready-green)
+![License](https://img.shields.io/badge/license-MIT-orange)
+![Status](https://img.shields.io/badge/status-In%20Development-yellow)
 
-• How to get bot for yourself (would be nice, if u make a command in code that Im the orginal author 😁):
-  1. Clone the repo:
-    git clone https://github.com/Ketsaio/discord-bot.git
+A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` and `LavaLink`. Focused on moderation, economy, ticket systems, and fun features.
 
-  2. Install libraries:
+## ✨ Features
+
+- **Economy System:** Balance check, shop, and currency management.
+- **Ticket System:** Button-based support tickets with transcript options.
+- **Dynamic Views:** Interactive buttons and menus (Persistent Views).
+- **Database Integration:** Persistent data storage using MongoDB (async).
+- **Admin Tools:** Sync commands globally or locally for testing via `/sync`.
+
+## 🚀 Roadmap
+
+- [x] Auto Moderation
+- [x] Economy System (Basic)
+- [x] Gambling Mini-games
+- [x] Global Leveling System
+- [x] Pet System
+- [x] Advanced Logging
+- [x] Music Player
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+- Python **3.12** or higher
+- [MongoDB](https://www.mongodb.com/) (Local or Atlas) installed and running
+- [Lavalink](https://github.com/lavalink-devs/Lavalink) Server (Required for Music)
+- A Discord Bot Token (from [Discord Developer Portal](https://discord.com/developers/applications))
+
+### Step-by-Step Guide
+
+1. **Clone the repository:**
+	```bash
+   git clone [https://github.com/Ketsaio/discord-bot.git](https://github.com/Ketsaio/discord-bot.git)
+   cd discord-bot
+	```
+
+2. **Create a virtual environment (Recommended):**
+    #### Windows
+    ```bash
+    python -m venv .venv
+    .venv\Scripts\activate
+	```
+    #### Linux/macOS
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+	```
+
+3. **Install libraries:**
+	```bash
     pip install -r requirements.txt
+	```
+4. **Configuration (.env):**
+    Create a file named .env in the root directory and fill in your details:
+   	```env
+	  DISCORD_TOKEN=your_discord_bot_token_here
+	  MONGO_URL=mongodb://localhost:27017/
+	  DEV_ID=your_discord_user_id
+	  TENOR = your_tenor_api_token_here
+	  LAVALINK_CLIENT = your_lavalink_password_here
+      ```
+5. **Run the bot:**
+	```bash
+	python3 main.py
+	```
+## 🤝 Contributing & Credits
+  This project was created by Ketsaio.
+  If you use this code for your own bot, please leave a reference to the original author!
 
-  3. Create a `.env` file with your discord bot token:
-    DISCORD_TOKEN=YOUR_TOKEN_HERE
-    MONGO_URL=MONGODB_URI_HERE
-
-  4. Run script:
-     python main.py
-
-• Requirements:
-  - Python 3.12 or higher
-  - discord.py
-  - python-dotenv
-  - Other libraries from requirements.txt
-  - Your discord bot token
-
-• Roadmap (not in order):
-  - [ ] Auto moderation  
-  - [ ] Economy system  
-  - [ ] Gambling mini games  
-  - [ ] Global levels system
-  - [ ] Pets
-
-
-• Usage:
-  Commands will be added soon as features are implemented.
-
-• License:
-  This project is under MIT License
-
-
-
-![GitHub license](https://img.shields.io/github/license/Ketsaio/discord-bot)
-![Python version](https://img.shields.io/badge/python-3.12%2B-blue)
+## 📄 License
+  This project is licensed under the MIT License - see the LICENSE file for details.
