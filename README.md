@@ -16,6 +16,7 @@ A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` an
 - **Dynamic Views:** Interactive buttons and menus (Persistent Views).
 - **Database Integration:** Persistent data storage using MongoDB (async).
 - **Admin Tools:** Sync commands globally or locally for testing via `/sync`.
+- **Music Player:** Play your favourite songs and listen to them on voicechannel!
 
 ## 🚀 Roadmap
 
