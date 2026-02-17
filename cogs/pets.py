@@ -34,7 +34,7 @@ class Pets(commands.Cog):
         '''
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         '''
         Retrieves guild data from database.
 
@@ -50,7 +50,7 @@ class Pets(commands.Cog):
             return None
         return member_data
 
-    async def unicorn(self, message : discord.Message):
+    async def unicorn(self, message : discord.Message) -> None:
         '''
         Sends spongebob gif after a message with unicorn equipped.
 
@@ -81,7 +81,7 @@ class Pets(commands.Cog):
         except aiohttp.ClientConnectionError as e:
             logger.error(f"Aiohttp Client Connection error in Pets.unicorn: {e}")
 
-    async def parrot(self, message : discord.Message):
+    async def parrot(self, message : discord.Message) -> None:
         '''
         Repeats everything the user wrote.
 
@@ -97,7 +97,7 @@ class Pets(commands.Cog):
         await message.channel.send(embed=embed)
         await self.add_pet_xp(randint(1,5), message)
 
-    async def pet_selector(self, pet : str, message : discord.Message):
+    async def pet_selector(self, pet : str, message : discord.Message) -> None:
         '''
         Selector for pet bonuses.
 
@@ -116,7 +116,7 @@ class Pets(commands.Cog):
         else:
             await self.add_pet_xp(randint(1,5), message)
 
-    async def get_current_pet(self, message : discord.Message):
+    async def get_current_pet(self, message : discord.Message) -> str:
         '''
         Retrives users active pet.
 
@@ -129,7 +129,7 @@ class Pets(commands.Cog):
         member_data = await self.get_member(message.author)
         return member_data.get("active_pet", None)
 
-    async def add_pet_xp(self, xp : int, message : discord.Message):
+    async def add_pet_xp(self, xp : int, message : discord.Message) -> None:
         '''
         Gives pet xp.
 
@@ -170,7 +170,7 @@ class Pets(commands.Cog):
             await message.channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_message(self, message : discord.Message):
+    async def on_message(self, message : discord.Message) -> None:
         '''
         Listen for messages, pet xp related.
 
@@ -186,7 +186,7 @@ class Pets(commands.Cog):
 
     @app_commands.command(name="change_pet", description="Choose pet to level and fight for you!")
     @app_commands.describe(pet_name="Name of the pet you chose!")
-    async def choose_active_pet(self, interaction : discord.Interaction, pet_name : str):
+    async def choose_active_pet(self, interaction : discord.Interaction, pet_name : str) -> None:
         '''
         Change users active pet.
 

@@ -25,7 +25,7 @@ class Shop(commands.Cog):
             self.shop_items = json.load(shop_file)
 
     @app_commands.command(name="shop", description="Check shop for items")
-    async def shop(self, interaction : discord.Interaction):
+    async def shop(self, interaction : discord.Interaction) -> None:
         """
         Sends embed with shop items into intreaction channel.
 
@@ -86,7 +86,7 @@ class ItemShop(discord.ui.Select):
         """
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         """
         Retrieves guild data from database.
 
@@ -102,7 +102,7 @@ class ItemShop(discord.ui.Select):
             return None
         return member_data
     
-    async def get_jail_role(self, interaction : discord.Interaction):
+    async def get_jail_role(self, interaction : discord.Interaction) -> discord.Role:
         """
         Retrieves jail role from database.
 
@@ -124,7 +124,7 @@ class ItemShop(discord.ui.Select):
 
         return jail_role
     
-    async def deduct_money(self, interaction : discord.Interaction, item):
+    async def deduct_money(self, interaction : discord.Interaction, item) -> None:
         """
         Deducts money from the user.
 
@@ -134,7 +134,7 @@ class ItemShop(discord.ui.Select):
 
         await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : item['cost'] * -1}})
 
-    async def add_item_to_user_inv(self, interaction : discord.Interaction, item_key, item_data):
+    async def add_item_to_user_inv(self, interaction : discord.Interaction, item_key, item_data) -> None:
         """
         Adds items to user inventory.
 
@@ -144,7 +144,7 @@ class ItemShop(discord.ui.Select):
         await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{item_key}" : item_data}})
 
 
-    async def pet_activate(self, interaction : discord.Interaction, bought_pet : str):
+    async def pet_activate(self, interaction : discord.Interaction, bought_pet : str) -> None:
         """
         Sets active pet if its not set.
 
@@ -157,10 +157,16 @@ class ItemShop(discord.ui.Select):
         
         await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"active_pet" : bought_pet}})
 
-    async def tier_picker(self, interaction):
+    async def tier_picker(self, interaction : discord.Interaction) -> str:
         """
         Picks tier for item lootbox.
         If user active pet is ghost, chances of dropping better pets are higher.
+
+        Arguments:
+            interaction (discord.Interaction): The interaction context.
+
+        Returns:
+            str: Tier of pet.
         """
         x = randint(1, 1000)
 
@@ -184,12 +190,15 @@ class ItemShop(discord.ui.Select):
             else:
                 return "legendary"
         
-    async def color_picker(self, rarity : str):
+    async def color_picker(self, rarity : str) -> discord.Color:
         """
         Picks a color for embed with item details.
 
         Arguments:
             rarity (str): How rare is item.
+
+        Returns:
+            discord.Color: Color of the embed.
         """
         if rarity == "common":
             return discord.Color.green()
@@ -202,7 +211,7 @@ class ItemShop(discord.ui.Select):
         else:
             return discord.Color.red()
     
-    async def callback(self, interaction : discord.Interaction):
+    async def callback(self, interaction : discord.Interaction) -> None:
         """
         Creates embed with item details after being choosen from select.
 
@@ -229,7 +238,7 @@ class ItemShop(discord.ui.Select):
 
         await interaction.response.send_message(embed=new_embed, view=new_view, ephemeral=True)
 
-    async def button_callback(self, interaction : discord.Interaction, chosen_item, chosen_label):
+    async def button_callback(self, interaction : discord.Interaction, chosen_item : dict, chosen_label : str) -> None:
         """
         Handles creating embed when item is bought.
 
@@ -277,7 +286,7 @@ class ItemShop(discord.ui.Select):
             await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)
 
 
-    async def lootbox(self, interaction : discord.Interaction, member_inv : dict):
+    async def lootbox(self, interaction : discord.Interaction, member_inv : dict) -> None:
         """
         Gives user random item or coins when u already have that item.
 
@@ -311,7 +320,7 @@ class ItemShop(discord.ui.Select):
         await interaction.response.send_message(embed=new_embed)
         await interaction.channel.send(interaction.user.mention)
 
-async def create_embed(title : str, desc : str, color: discord.Color, footer : str = ""):
+async def create_embed(title : str, desc : str, color: discord.Color, footer : str = "") -> discord.Embed:
     """
     Creates an embed.
 
@@ -319,7 +328,10 @@ async def create_embed(title : str, desc : str, color: discord.Color, footer : s
         title (str): Title of the embed
         desc (str): Description of the embed
         color (discord.Color): Color chosen for embed
-        footer (str): Footer of the embed, if not given footer will be empty  
+        footer (str): Footer of the embed, if not given footer will be empty 
+
+    Returns:
+        discord.Embed: Created embed. 
     """
 
     embed = discord.Embed(

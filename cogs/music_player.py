@@ -27,7 +27,7 @@ class Music_player(commands.Cog):
         self.passw = getenv("LAVALINK_CLIENT")
 
     @commands.Cog.listener()
-    async def on_wavelink_track_end(self, payload : wavelink.TrackEndEventPayload):
+    async def on_wavelink_track_end(self, payload : wavelink.TrackEndEventPayload) -> None:
         '''
         Listen for song to end, if queue is not empty plays next track, else waits for new song to play.
 
@@ -47,7 +47,7 @@ class Music_player(commands.Cog):
             pass
     
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member : discord.Member, before : discord.VoiceState, after : discord.VoiceState):
+    async def on_voice_state_update(self, member : discord.Member, before : discord.VoiceState, after : discord.VoiceState) -> None:
         '''
         Listens for members joining/leaving voice channel, if bot leaves the channel it disconnects from lavalink.
 
@@ -67,7 +67,7 @@ class Music_player(commands.Cog):
 
 
     @app_commands.command(name="join", description="Joins your voice channel!")
-    async def join(self, interaction : discord.Interaction):
+    async def join(self, interaction : discord.Interaction) -> None:
         '''
         Connects bot to your voice channel.
 
@@ -82,7 +82,7 @@ class Music_player(commands.Cog):
         await interaction.response.send_message(f"I joined {interaction.user.voice.channel.mention}", delete_after=5)
 
     @app_commands.command(name="leave", description="Leaves your voice channel!")
-    async def leave(self, interaction : discord.Interaction):
+    async def leave(self, interaction : discord.Interaction) -> None:
         '''
         Disconnects bot from your voice channel.
 
@@ -97,7 +97,7 @@ class Music_player(commands.Cog):
         await interaction.response.send_message(f"I left {interaction.user.voice.channel.mention}", delete_after=5)
 
     @app_commands.command(name="skip", description="Skip current track!")
-    async def skip(self, interaction : discord.Interaction):
+    async def skip(self, interaction : discord.Interaction) -> None:
         '''
         Skips currently playing song.
 
@@ -115,7 +115,7 @@ class Music_player(commands.Cog):
 
     @app_commands.command(name="volume", description="Change volume of your music!")
     @app_commands.describe(volume="Needs to be in [1-100] range!")
-    async def change_volume(self, interaction : discord.Interaction, volume : int):
+    async def change_volume(self, interaction : discord.Interaction, volume : int) -> None:
         '''
         Changes music volume.
 
@@ -139,7 +139,7 @@ class Music_player(commands.Cog):
 
     @app_commands.command(name="loop", description="Loop your song!")
     @app_commands.describe(mode="Mode of your loop! [OFF, SINGLE, PLAYLIST]")
-    async def loop(self, interaction : discord.Interaction, mode: Literal["OFF", "SINGLE", "QUEUE"]):
+    async def loop(self, interaction : discord.Interaction, mode: Literal["OFF", "SINGLE", "QUEUE"]) -> None:
         '''
         Loops song you are listening to.
 
@@ -165,7 +165,7 @@ class Music_player(commands.Cog):
         await interaction.response.send_message(f"Queue is now in {mode} mode!", delete_after=5)
 
     @app_commands.command(name="show_queue", description="Look into your queue!")
-    async def show_queue(self, interaction : discord.Interaction):
+    async def show_queue(self, interaction : discord.Interaction) -> None:
         '''
         Generates embed with songs in queue, divided into pages.
 
@@ -194,7 +194,7 @@ class Music_player(commands.Cog):
 
     @app_commands.command(name="play", description="Play your favourite music!")
     @app_commands.describe(argument="Title/Author/Link to your song!")
-    async def play(self, interaction : discord.Interaction, argument : str):
+    async def play(self, interaction : discord.Interaction, argument : str) -> None:
         '''
         Music player core mechanism. If song is already playing, adds to queue.
 
@@ -233,7 +233,7 @@ class Music_player(commands.Cog):
 
             await self.embed_for_songs(interaction, tracks, mode)
 
-    async def cog_load(self):
+    async def cog_load(self) -> None:
         '''
         Loads wavelink node.
         '''
@@ -248,7 +248,7 @@ class Music_player(commands.Cog):
             print(f"Node error on connect, exiting! | {e}")
             exit()
 
-    async def embed_for_songs(self, interaction : discord.Interaction, tracks : list, mode : bool):
+    async def embed_for_songs(self, interaction : discord.Interaction, tracks : list, mode : bool) -> None:
             '''
             Generates embed menu for choosing songs.
 
@@ -270,7 +270,7 @@ class Music_player(commands.Cog):
 
             await interaction.followup.send(embed=embed, view=MenuForMusic(tracks, mode)) # mode: False = Play | True = Queue
 
-    async def no_stealing(self, interaction : discord.Interaction):
+    async def no_stealing(self, interaction : discord.Interaction) -> bool:
         '''
         Checks if user is in the same channel as bot.
 

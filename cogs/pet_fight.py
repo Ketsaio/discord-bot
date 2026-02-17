@@ -26,7 +26,7 @@ class Pet_fight(commands.Cog):
         '''
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         '''
         Retrieves guild data from database.
 
@@ -45,7 +45,7 @@ class Pet_fight(commands.Cog):
 
     @app_commands.command(name="battle", description="Test your pet in battle!")
     @app_commands.describe(member="Your opponent!")
-    async def battle(self, interaction : discord.Interaction, member : discord.Member):
+    async def battle(self, interaction : discord.Interaction, member : discord.Member) -> None:
         '''
         Creates embed and links it with view.
 

@@ -27,7 +27,7 @@ class Tickets(commands.Cog):
         '''
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         '''
         Retrieves guild data from database.
 
@@ -44,15 +44,12 @@ class Tickets(commands.Cog):
         return member_data
     
     @app_commands.command(name = "setup_tickets", description="Use on channel dedicated to tickets!")
-    async def setup(self, interaction : discord.Interaction):
+    async def setup(self, interaction : discord.Interaction) -> None:
         '''
         Sends an embed with a button to create tickets.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
-
-        Returns:
-            Embed with button.
         '''
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):

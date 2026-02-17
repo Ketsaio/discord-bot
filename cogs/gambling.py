@@ -32,7 +32,7 @@ class Gambling(commands.Cog):
         '''
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         '''
         Retrieves guild data from database.
 
@@ -50,7 +50,7 @@ class Gambling(commands.Cog):
     
     @app_commands.command(name = "slots", description="Gamble your money on slots")
     @app_commands.describe(amount = "Amount of money u want to gamble")
-    async def automats(self, interaction : discord.Interaction, amount : int):
+    async def automats(self, interaction : discord.Interaction, amount : int) -> None:
         '''
         Simulates gambling game: "slots".
 
@@ -104,10 +104,10 @@ class Gambling(commands.Cog):
 
         if slot1 == slot2 == slot3:
             win_amount = await self.rat_pet_activity(active_pet, amount*7)
-            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win_amount}})
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": int(win_amount)}})
             embed_result = discord.Embed(
                 title="🎉 JACKPOT! 🎉",
-                description=f"All slots match! You won **{win_amount} coins**!",
+                description=f"All slots match! You won **{int(win_amount)} coins**!",
                 color=discord.Colour.green()
             )
         else:
@@ -121,7 +121,7 @@ class Gambling(commands.Cog):
                    
 
     @app_commands.command(name="scratches", description="Scratch your way to glory! 12$")
-    async def scratches(self, interaction: discord.Interaction):
+    async def scratches(self, interaction: discord.Interaction) -> None:
         '''
         Simulates gambling game: "scratches".
 
@@ -151,10 +151,10 @@ class Gambling(commands.Cog):
 
         if win != 0:
             win = await self.rat_pet_activity(active_pet, win)
-            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win}})
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": int(win)}})
             embed = Embed(
                 title="🎉 You won!",
-                description=f"You just won **{win} coins**!",
+                description=f"You just won **{int(win)} coins**!",
                 color=Colour.green()
             )
         else:
@@ -169,7 +169,7 @@ class Gambling(commands.Cog):
 
     @app_commands.command(name="roulette", description="Win some money!")
     @app_commands.describe(amount="Amount of money to gamble", color="Pick color", number="Pick number")
-    async def roulette(self, interaction: discord.Interaction, amount: int, color: str, number: int = None):
+    async def roulette(self, interaction: discord.Interaction, amount: int, color: str, number: int = None) -> None:
         '''
         Simulates gambling game: "roulette".
 
@@ -221,10 +221,10 @@ class Gambling(commands.Cog):
 
         if win > 0:
             win = await self.rat_pet_activity(active_pet, win)
-            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win}})
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": int(win)}})
             embed = Embed(
                 title="🎉 You won!",
-                description=f"The roulette landed on **{result} ({result_color})**\nYou won **{win} coins**!",
+                description=f"The roulette landed on **{result} ({result_color})**\nYou won **{int(win)} coins**!",
                 color=Colour.green()
             )
         else:
@@ -238,7 +238,7 @@ class Gambling(commands.Cog):
 
 
     @app_commands.command(name = "crime", description = "go do a crime")
-    async def crime(self, interaction : discord.Interaction):
+    async def crime(self, interaction : discord.Interaction) -> None:
         '''
         Simulates doing a illegal activity.
 
@@ -258,7 +258,7 @@ class Gambling(commands.Cog):
                 money_from_crime = randint(50, 150)
                 money_from_crime = await self.squid_pet_activity(active_pet, money_from_crime)
                 await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
-                    "coins" : money_from_crime}})
+                    "coins" : int(money_from_crime)}})
                 
                 embed = Embed(
                     title="💸 You commited a crime!",
@@ -294,7 +294,7 @@ class Gambling(commands.Cog):
 
     @app_commands.command(name = "steal", description = "rob someone")
     @app_commands.describe(member = "discord member")
-    async def steal(self, interaction : discord.Interaction, member : discord.Member):
+    async def steal(self, interaction : discord.Interaction, member : discord.Member) -> None:
         '''
         Simulates robbing someone.
 
@@ -330,8 +330,8 @@ class Gambling(commands.Cog):
                 how_much /= 10
                 stolen = int(getting_robbed_money * how_much)
                 stolen = await self.squid_pet_activity(active_robber_pet, stolen)
-                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {"coins" : stolen}})
-                await self.bot.database["users"].update_one({"_id" : str(member.id)}, {"$inc" : {"coins" : -stolen}})
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {"coins" : int(stolen)}})
+                await self.bot.database["users"].update_one({"_id" : str(member.id)}, {"$inc" : {"coins" : int(-stolen)}})
 
                 embed = Embed(
                     title="🥷 Succesful robbery!",
@@ -365,38 +365,47 @@ class Gambling(commands.Cog):
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    async def time_left(self, last_smth : datetime, hours : int):
+    async def time_left(self, last_smth : datetime, hours : int) -> tuple:
             '''
             Handling countdowns.
 
             Arguments:
                 last_smth (datetime): Last command usage.
                 hours (int): How many hours cooldown is.
+
+            Returns:
+                hours, minutes (tuple): Time left on cooldown.
             '''
             remaining = timedelta(hours=hours) - (datetime.now() - last_smth)
             hours, remainder = divmod(remaining.seconds, 3600)
             minutes = remainder // 60
             return hours, minutes
     
-    async def rat_pet_activity(self, pet : str, win : int): # legal incomes
+    async def rat_pet_activity(self, pet : str, win : int) -> float:
         '''
         Apply a pet bonus.
 
         Arguments:
             pet (str): Users active pet.
             win (int): Amount of money to multiply.
+
+        Returns:
+            win (float): money multiplied by 1.25.
         '''
         if pet == "rat":
             return win * 1.25
         return win
     
-    async def squid_pet_activity(self, pet : str, win : int): # illegal incomes
+    async def squid_pet_activity(self, pet : str, win : int) -> float:
         '''
         Apply a pet bonus.
 
         Arguments:
             pet (str): Users active pet.
             win (int): Amount of money to multiply.
+
+        Returns:
+            win (float): Money multiplied by 1.25.
         '''
         if pet == "squid":
             return win * 1.3

@@ -19,7 +19,7 @@ class Database(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member : discord.Member) -> None:
         """
         Listen for member joining the guild and creates document for them in database if it doesn't already exists.
 
@@ -54,7 +54,7 @@ class Database(commands.Cog):
             guild_data = await self.bot.database["guilds"].find_one({"_id": guild_id})
         return guild_data
 
-    async def add_guild_to_database(self, guild):
+    async def add_guild_to_database(self, guild : discord.Guild) -> None:
         """
         Create document for guild in database.
 
@@ -93,7 +93,7 @@ class Database(commands.Cog):
                 }
             })
 
-    async def disable_jail(self, discord_Obj):
+    async def disable_jail(self, discord_Obj) -> None:
         """
         Disable jail system for guild.
 
@@ -105,19 +105,19 @@ class Database(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_guild_join(self, guild):
+    async def on_guild_join(self, guild : discord.Guild) -> None:
         """
         Listen for bot joining the guild, then creates documents for guild in database if it doesn't exist.
 
         Arguments:
-            guild (discord.guild): Guild data.
+            guild (discord.Guild): Guild data.
         """
         guild_in_database = await self.bot.database["guilds"].find_one({"_id" : str(guild.id)})
 
         if guild_in_database is None:
             await self.add_guild_to_database(guild)
 
-    async def find_or_create__member(self, discord_Obj):
+    async def find_or_create__member(self, discord_Obj) -> dict:
         """
         Finds or creates members in database.
 
@@ -141,7 +141,7 @@ class Database(commands.Cog):
             user_data = await self.bot.database["users"].find_one({"_id" : member_id})
         return user_data
 
-    async def add_member_to_database(self, member_id : int):
+    async def add_member_to_database(self, member_id : int) -> None:
         """
         Add member to database.
 

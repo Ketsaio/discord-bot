@@ -29,7 +29,7 @@ class Economy(commands.Cog):
         """
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         """
         Retrieves guild data from database.
 
@@ -46,7 +46,7 @@ class Economy(commands.Cog):
         return member_data
 
     @commands.Cog.listener()
-    async def on_message(self, message : discord.Message):
+    async def on_message(self, message : discord.Message) -> None:
         """
         Listens for any message send, then gives author 1-5 xp.
         If user active pet is doggo then user recives bounus xp.
@@ -75,7 +75,7 @@ class Economy(commands.Cog):
     
 
     @app_commands.command(name="balance", description="Check your balance!")
-    async def check_bal(self, interaction : discord.Interaction):
+    async def check_bal(self, interaction : discord.Interaction) -> None:
         """
         Retrieves user balance from database.
 
@@ -93,7 +93,7 @@ class Economy(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
         
     @app_commands.command(name="daily_reward", description="Claim your global daily reward")
-    async def daily_reward(self, interaction : discord.Interaction):
+    async def daily_reward(self, interaction : discord.Interaction) -> None:
         """
         Gives user a reward (can be used once in 24h).
 
@@ -119,7 +119,7 @@ class Economy(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="inventory", description="Take a look into your inventory")
-    async def inventory(self, interaction : discord.Interaction):
+    async def inventory(self, interaction : discord.Interaction) -> None:
         """
         Retrieves user inventory from database.
 
@@ -146,7 +146,17 @@ class Economy(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-    async def time_left(self, last_smth : datetime):
+    async def time_left(self, last_smth : datetime) -> tuple:
+        '''
+        Handling countdowns.
+
+        Arguments:
+            last_smth (datetime): Last command usage.
+            hours (int): How many hours cooldown is.
+
+        Returns:
+                hours, minutes (tuple): Time left on cooldown.
+        '''
         remaining = timedelta(hours=24) - (datetime.now() - last_smth)
         hours, remainder = divmod(remaining.seconds, 3600)
         minutes = remainder // 60

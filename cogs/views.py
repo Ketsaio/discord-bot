@@ -16,7 +16,7 @@ class TicketView(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="📩 Click to create a ticket!", style=discord.ButtonStyle.grey, custom_id="view_create_ticket")
-    async def create(self, interaction : discord.Interaction, button: discord.ui.Button):
+    async def create(self, interaction : discord.Interaction, button: discord.ui.Button) -> None:
         '''
         Creates a new ticket channel with restricted access for the user.
 
@@ -60,7 +60,7 @@ class InTicketView(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="🔒 Close", style = discord.ButtonStyle.gray, custom_id="view_close_ticket")
-    async def close(self, interaction : discord.Interaction, button: discord.ui.Button):
+    async def close(self, interaction : discord.Interaction, button: discord.ui.Button) -> None:
         '''
         Closes the ticket for the user and displays the admin control panel.
 
@@ -94,7 +94,7 @@ class AfterTicketView(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label = "❌ Delete", style = discord.ButtonStyle.gray, custom_id="view_delete_ticket")
-    async def delete(self, interaction : discord.Interaction, button: discord.ui.Button):
+    async def delete(self, interaction : discord.Interaction, button: discord.ui.Button) -> None:
         '''
         Deletes a ticket.
 
@@ -113,16 +113,13 @@ class AfterTicketView(discord.ui.View):
             await interaction.followup.send("U cant do that!", ephemeral=True)
 
     @discord.ui.button(label = "📝 Log", style = discord.ButtonStyle.gray, custom_id="view_logs_in_ticket")
-    async def log(self, interaction : discord.Interaction, button: discord.ui.Button):
+    async def log(self, interaction : discord.Interaction, button: discord.ui.Button) -> None:
         '''
         Generates and sends a .txt file containing the ticket's message log.
 
         Arguments:
             interaction (discord.Interaction): Context interaction.
             button (discord.ui.Button): Not used but required by syntax.
-
-        Returns:
-            A .txt file containing the message history.
         '''
         try:
             await interaction.response.send_message("Please wait, generating logs...")
@@ -162,10 +159,10 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
         self.role_id = role_id
 
     @classmethod
-    async def from_custom_id(cls, interaction, item, match, /):
+    async def from_custom_id(cls, interaction : discord.Interaction, item : discord.ui.Item, match, /):
         return cls(int(match['id']))
     
-    async def callback(self, interaction : discord.Interaction):
+    async def callback(self, interaction : discord.Interaction) -> None:
         '''
         Gives/Removes role from user.
 
@@ -188,7 +185,7 @@ class DynamicRoleButton(DynamicItem[discord.ui.Button], template = r'role:(?P<id
         
 
 class FinalSetupModal(Modal, title="RR Configuration"):
-    def __init__(self, channel, selected_roles):
+    def __init__(self, channel : discord.TextChannel, selected_roles : list):
         '''
         Initializes the Modal elements.
 
@@ -218,7 +215,7 @@ class FinalSetupModal(Modal, title="RR Configuration"):
         self.add_item(self.embed_color)
 
 
-    def parse_style(self, text):
+    def parse_style(self, text : str) -> discord.ButtonStyle:
         '''
         Translate provided style for button to discord.ButtonStyle.
 
@@ -226,7 +223,7 @@ class FinalSetupModal(Modal, title="RR Configuration"):
             text (string): style to translate.
 
         Returns:
-            discord.ButtonStyle.*.
+            discord.ButtonStyle: Color of the button.
         '''
         text = text.lower().strip()
         if text in ["green", "success"]:
@@ -240,7 +237,7 @@ class FinalSetupModal(Modal, title="RR Configuration"):
         else:
             return None
 
-    async def on_submit(self, interaction : discord.Interaction):
+    async def on_submit(self, interaction : discord.Interaction) -> None:
         embed = Embed(title=self.title_input.value, description=self.desc_input.value, color=discord.Color.from_str(self.embed_color.value))
 
         emojis = list(self.emoji_input.value.split(' '))
@@ -284,7 +281,7 @@ class RoleSetupView(discord.ui.View):
 
 
     @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="select roles...", min_values=1, max_values=25)
-    async def select_roles(self, interaction : discord.Interaction, select : discord.ui.RoleSelect):
+    async def select_roles(self, interaction : discord.Interaction, select : discord.ui.RoleSelect) -> None:
         '''
         Updates the selected roles list.
 
@@ -296,7 +293,7 @@ class RoleSetupView(discord.ui.View):
         await interaction.response.defer()
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
-    async def confirm(self, intreaction : discord.Interaction, button : discord.ui.Button):
+    async def confirm(self, intreaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Submits chosen roles to go into Reaction Roles.
 
@@ -313,7 +310,7 @@ class RoleSetupView(discord.ui.View):
         await intreaction.response.send_modal(modal)
 
 class MusicButton(discord.ui.Button):
-    def __init__(self, id : int, track : wavelink.Playable, mode : bool):
+    def __init__(self, id : int, track : wavelink.Playable, mode : bool) -> None:
         '''
         Creates a button linked to song.
 
@@ -330,7 +327,7 @@ class MusicButton(discord.ui.Button):
         self.track = track
         self.mode = mode
 
-    async def callback(self, interaction : discord.Interaction):
+    async def callback(self, interaction : discord.Interaction) -> None:
         '''
         On button click plays chosen song or adds it to the queue.
 
@@ -391,7 +388,7 @@ class Queue_View(discord.ui.View):
 
         self.update_buttons()
 
-    def update_buttons(self):
+    def update_buttons(self) -> None:
         '''
         Updates button on changing page. If page is first/last corresponding button is disabled.
         '''
@@ -405,7 +402,7 @@ class Queue_View(discord.ui.View):
         else:
             self.children[1].disabled = False
 
-    def create_embed(self):
+    def create_embed(self) -> discord.Embed:
         '''
         Creates embed with 10 songs from queue, divided into pages that you can move between.
 
@@ -426,7 +423,7 @@ class Queue_View(discord.ui.View):
         return embed
     
     @discord.ui.button(label="◀️", style=discord.ButtonStyle.secondary)
-    async def prev_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+    async def prev_button(self, interaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Button responsible for changing pages (backward).
 
@@ -440,7 +437,7 @@ class Queue_View(discord.ui.View):
 
 
     @discord.ui.button(label="▶️", style=discord.ButtonStyle.secondary)
-    async def next_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+    async def next_button(self, interaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Button responsible for changing pages (forward).
 
@@ -473,7 +470,7 @@ class AcceptView(discord.ui.View):
         '''
         return self.bot.get_cog("Database")
 
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         '''
         Retrieves guild data from database.
 
@@ -490,7 +487,7 @@ class AcceptView(discord.ui.View):
         return member_data
 
     @discord.ui.button(label="Accept", style=discord.ButtonStyle.green)
-    async def accept_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+    async def accept_button(self, interaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Creates an accept button used to accept challenge.
         If interacted with, it prepares everything needed to battle and edits the original embed.
@@ -517,7 +514,7 @@ class AcceptView(discord.ui.View):
 
 
     @discord.ui.button(label="Deny", style=discord.ButtonStyle.red)
-    async def deny_button(self, interaction : discord.Interaction, button : discord.ui.Button):
+    async def deny_button(self, interaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Creates a deny button used to deny chellenge.
         If interacted with it removes the buttons and stops the view.
@@ -552,7 +549,7 @@ class BattleView(discord.ui.View):
         self.turn = 1;
         self.curr_playing = self.members[self.turn].member_id
 
-    async def update_buttons(self, interaction : discord.Interaction):
+    async def update_buttons(self, interaction : discord.Interaction) -> None:
         '''
         Function responsible for changing turns and end the game.
 
@@ -584,7 +581,7 @@ class BattleView(discord.ui.View):
         return True
     
     @discord.ui.button(label="Attack", style=discord.ButtonStyle.danger)
-    async def normal_attack(self, interaction : discord.Interaction, button : discord.ui.Button):
+    async def normal_attack(self, interaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Creates a button responsible for attack move, deducting hp from opponent and editing original embed.
 
@@ -613,7 +610,7 @@ class BattleView(discord.ui.View):
 
 
     @discord.ui.button(label="Healing", style=discord.ButtonStyle.danger)
-    async def healing(self, interaction : discord.Interaction, button : discord.ui.Button):
+    async def healing(self, interaction : discord.Interaction, button : discord.ui.Button) -> None:
         '''
         Button responible for healing action, adding hp to player pet and editing the original embed.
 
@@ -652,7 +649,7 @@ class BattlePlayer:
         self.pet_atk = data_from_db.get("inventory", {}).get(self.pet_name, {}).get("atk", 0)
         self.pet_def = data_from_db.get("inventory", {}).get(self.pet_name, {}).get("def", 0)
 
-    def id(self):
+    def id(self) -> int:
         '''
         Method responsible for returning member id.
 
@@ -661,9 +658,12 @@ class BattlePlayer:
         '''
         return self.member_id
 
-    def receive_damage(self, damage : int):
+    def receive_damage(self, damage : int) -> None:
         '''
         Method responsible for receiving damage, deducts calculated hp from pet.
+
+        Arguments:
+            damage (int): Damage to recive.
         '''
         multipli = randint(0,5)
         multipli /= 10
@@ -671,9 +671,12 @@ class BattlePlayer:
 
         self.pet_hp -= int(damage * multipli // (self.pet_def * 0.05))
 
-    def regen(self):
+    def regen(self) -> int:
         '''
         Method responsible for regenerating your pet health.
+
+        Returns:
+            healed_for (int): Healing recived.
         '''
         healed_for = randint(10,20)
 

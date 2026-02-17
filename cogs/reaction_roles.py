@@ -26,7 +26,7 @@ class Reaction_roles(commands.Cog):
         '''
         return self.bot.get_cog("Database")
     
-    async def get_member(self, discord_Obj):
+    async def get_member(self, discord_Obj) -> dict:
         '''
         Retrieves guild data from database.
 
@@ -44,7 +44,7 @@ class Reaction_roles(commands.Cog):
     
     @app_commands.command(name="setup_reaction_roles", description="Sets up reaction roles embed")
     @app_commands.describe(channel = "Where u want your RR")
-    async def setup_rr(self, interaction : discord.Interaction, channel : discord.TextChannel):
+    async def setup_rr(self, interaction : discord.Interaction, channel : discord.TextChannel) -> None:
         '''
         Send embed menu to choose roles for RR.
 
@@ -55,8 +55,7 @@ class Reaction_roles(commands.Cog):
         Returns:
             Embed with select menu containing every role to choose from and with confirmation button.
         '''
-
-
+        
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return

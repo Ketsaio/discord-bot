@@ -38,7 +38,7 @@ class Welcome(commands.Cog):
         return guild_data
 
     @commands.Cog.listener()
-    async def on_member_join(self, member : discord.Member):
+    async def on_member_join(self, member : discord.Member) -> None:
         '''
         Listens for members joining server.
 
@@ -89,7 +89,7 @@ class Welcome(commands.Cog):
         
 
     @app_commands.command(name="turn_welcome_messages", description="Turn on/off welcome messages for this discord server!")
-    async def turn_welcome(self, interaction : discord.Interaction):
+    async def turn_welcome(self, interaction : discord.Interaction) -> None:
         '''
         Turns on/off welcome messages.
 
@@ -114,29 +114,12 @@ class Welcome(commands.Cog):
         
     @app_commands.command(name="welcome_messages_setup", description="Setup everything needed for welcome messages!")
     @app_commands.describe(channel_name="Channel name", title="Your custom title of welcome message embed!", desc="Your desc, {mention} will mention member!")
-    async def setup_wm(self, interaction : discord.Interaction, channel_name : discord.TextChannel, title : str = "", desc : str = ""):
+    async def setup_wm(self, interaction : discord.Interaction, channel_name : discord.TextChannel, title : str = "", desc : str = "") -> None:
         '''
         Sets up welcome messages on the server.
 
         Arguments:
             interaction (discord.player : wavelink = interaction.guild.voice_client
-
-        if not player:
-            player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
-        else:
-            if player.channel.id != interaction.user.voice.channel.id:
-                return
-            
-        if self.mode:
-            player.queue.put(self.track)
-        else:
-            if player.playing:
-                player.queue.put(self.track)
-            else:
-                await player.play(self.track)Interaction): The interaction context.
-            channel_name (discord.TextChannel): Channel where welcome messages will be send.
-            title (str): Optional custom embed title.
-            desc (str): Optional custom embed description.  
         '''
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)

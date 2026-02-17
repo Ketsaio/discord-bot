@@ -24,7 +24,7 @@ class Automod(commands.Cog):
         self.bot = bot
         self.guild_banned_words = {}
 
-    async def safe_add_role(self, member: discord.Member, role: discord.Role):
+    async def safe_add_role(self, member: discord.Member, role: discord.Role) -> None:
         """
         Adds a role to a member safely, without raising permission errors.
 
@@ -39,7 +39,7 @@ class Automod(commands.Cog):
             return
         await member.add_roles(role)
 
-    async def safe_remove_role(self, member: discord.Member, role: discord.Role):
+    async def safe_remove_role(self, member: discord.Member, role: discord.Role) -> None:
         """
         Removes a role from a member safely, without raising permission errors.
 
@@ -52,9 +52,9 @@ class Automod(commands.Cog):
         
         await member.remove_roles(role)
 
-    async def get_banned_words(self, discord_Obj):
+    async def get_banned_words(self, discord_Obj) -> set:
         """
-        Retrieves a set of banned words for a guild.
+        Retrieves a list of banned words for a guild.
 
         Arguments:
             discord_Obj: Discord Object (Interaction, Member, Role or Channel).
@@ -198,7 +198,7 @@ class Automod(commands.Cog):
         return discord_Obj.guild.get_role(role_id) 
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: discord.Message) -> None:
         """
         Listen for any message send, then checks if its a guild banned word.
 
@@ -230,7 +230,7 @@ class Automod(commands.Cog):
             await message.author.send(f"Please don't swear {message.author.mention}, a word from your sentence is prohibited on ***{message.guild.name}***")
 
     @commands.Cog.listener()
-    async def on_guild_role_delete(self, role : discord.Role):
+    async def on_guild_role_delete(self, role : discord.Role) -> None:
         """
         Listen for jail role deletion.
 
@@ -246,7 +246,7 @@ class Automod(commands.Cog):
             await self.jail_disable(role)
 
     @commands.Cog.listener() 
-    async def on_guild_channel_delete(self, channel : discord.abc.GuildChannel):
+    async def on_guild_channel_delete(self, channel : discord.abc.GuildChannel) -> None:
         """
         Listen for jail voice/text channel delete.
 
@@ -262,7 +262,7 @@ class Automod(commands.Cog):
             await self.jail_disable(channel)
 
     @commands.Cog.listener()
-    async def on_guild_channel_create(self, channel : discord.abc.GuildChannel):
+    async def on_guild_channel_create(self, channel : discord.abc.GuildChannel) -> None:
         """
         Listen for channel create. If jail is enabled sets permissions accordingly.
 
@@ -283,7 +283,7 @@ class Automod(commands.Cog):
 
     @app_commands.command(name = "clear", description = "Clear given amount of messages")
     @app_commands.describe(amount = "How much messages to clear")
-    async def delete_messages(self, interaction: discord.Interaction, amount : int = 1):
+    async def delete_messages(self, interaction: discord.Interaction, amount : int = 1) -> None:
         """
         Delete a set amount of messages.
 
@@ -325,7 +325,7 @@ class Automod(commands.Cog):
         await interaction.followup.send(f"Cleared {deleted_messages} messages!", ephemeral=True)
 
     @app_commands.command(name = "jail_setup", description = "Prepares jail channel and role for jail command (can take a while if u have many channels)")
-    async def setup_jail(self, interaction : discord.Interaction):
+    async def setup_jail(self, interaction : discord.Interaction) -> None:
         """
         Creates category, text and voice channel, and role for jail.
         
@@ -362,7 +362,7 @@ class Automod(commands.Cog):
 
     @app_commands.command(name = "jail", description = "Send to jail or let them out")
     @app_commands.describe(member = "Person that will be send to jail")
-    async def jail(self, interaction : discord.Interaction, member : discord.Member):
+    async def jail(self, interaction : discord.Interaction, member : discord.Member) -> None:
         """
         Send chosen member to jail. If member is in jail already, its will unjail them.
 
@@ -400,7 +400,7 @@ class Automod(commands.Cog):
             await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="ban", description = "Bans user")
-    async def ban(self, interaction : discord.Interaction, member : discord.Member):    # to add: deleted days and reason
+    async def ban(self, interaction : discord.Interaction, member : discord.Member) -> None:
         """
         Ban chosen member.
 
@@ -421,7 +421,7 @@ class Automod(commands.Cog):
 
     @app_commands.command(name="timeout", description = "Timeout user")
     @app_commands.describe(member = "Person to timeout", time = "How much time? (in minutes)")
-    async def timeout(self, interaction : discord.Interaction, member : discord.Member, time : int = 10):
+    async def timeout(self, interaction : discord.Interaction, member : discord.Member, time : int = 10) -> None:
         """
         Times out a chosen member.
 
@@ -449,7 +449,7 @@ class Automod(commands.Cog):
 
     @app_commands.command(name="add_to_bad_words", description="Adds word to banned words in guild")
     @app_commands.describe(bad_word="Bad word that will be banned from this guild")
-    async def add_bad_word(self, interaction : discord.Interaction, bad_word : str):
+    async def add_bad_word(self, interaction : discord.Interaction, bad_word : str) -> None:
         """
          Add or remove a bad word from the guild's banned list.
 
@@ -487,7 +487,7 @@ class Automod(commands.Cog):
         await interaction.followup.send(f"{bad_word} has been {action}")
         
     @app_commands.command(name="check_messages_for_bad_words", description="Enable/disable checking every message for potential bad words")
-    async def check_bool_bad_words(self, interaction : discord.Interaction):
+    async def check_bool_bad_words(self, interaction : discord.Interaction) -> None:
         """
         Check if deleting bad words is enabled
 
