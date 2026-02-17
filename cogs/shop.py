@@ -145,6 +145,16 @@ class ItemShop(discord.ui.Select):
         except PyMongoError as e:
             logger.exception(f"PyMongoError in Shop.add_item_to_user_inv: {e}")
 
+    async def pet_activate(self, interaction : discord.Interaction, bought_pet : str):
+        try:
+            member_data = await self.get_member(interaction)
+            if member_data.get("active_pet"):
+                return
+            
+            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"active_pet" : bought_pet}})
+        except PyMongoError as e:
+            logger.exception(f"PyMongoError in Shop.pet_activate: {e}")
+
     async def tier_picker(self, interaction):
         """
         Picks tier for item lootbox.
@@ -224,7 +234,7 @@ class ItemShop(discord.ui.Select):
         Arguments:
             interaction (discord.Interaction): Context interaction.
             chosen_item: Key of the dict.
-            choasen_label: Value of the dict.
+            chosen_label: Value of the dict.
         """
 
         member_data = await self.get_member(interaction)
@@ -259,6 +269,7 @@ class ItemShop(discord.ui.Select):
         if chosen_label not in member_inv:
             await self.add_item_to_user_inv(interaction, chosen_label, chosen_item)
             await self.deduct_money(interaction, chosen_item)
+            await self.pet_activate(interaction, chosen_label)
             await interaction.response.send_message(f"U bought **{chosen_label}**", ephemeral=True)
         else:
             await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)

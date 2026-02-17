@@ -308,8 +308,22 @@ class Automod(commands.Cog):
         deleted_newer = await interaction.channel.purge(limit=len(newer))
         
         for message in older:
-            await message.delete()
-            await asyncio.sleep(0.6)
+            deleted_count = 0
+            try:
+                await message.delete()
+                await asyncio.sleep(0.6)
+                deleted_count += 1
+                if deleted_count % 5 == 0:
+                    await asyncio.sleep(2)
+                else:
+                    await asyncio.sleep(0.4)
+            except discord.HTTPException as e:
+                if e.status == 429:
+                    retry_after = e.retry_after
+                    logger.warning(f"Rate limited! Sleeping for {retry_after}")
+                    await asyncio.sleep(retry_after)
+                else:
+                    break
 
         deleted_messages = len(deleted_newer) + len(older)
 

@@ -115,8 +115,9 @@ if __name__ == "__main__":
     
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 
-    logging_handler = logging.FileHandler(filename=f"discord_{date_str}.log", encoding="UTF-8", mode="a")
+    logging_handler = logging.FileHandler(filename=f"discord_logs/discord_{date_str}.log", encoding="UTF-8", mode="a")
 
-    discord.utils.setup_logging(handler=logging_handler, level=logging.INFO)
-    
-    bot.run(TOKEN)
+    formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+    logging_handler.setFormatter(formatter)
+
+    bot.run(TOKEN, log_handler=logging_handler, log_level=logging.INFO)

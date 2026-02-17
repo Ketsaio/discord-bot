@@ -69,7 +69,7 @@ class Economy(commands.Cog):
             xp = member_data.get("xp")
             level = member_data.get("level")
             if xp >= 8 * level:
-                await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : -10,"level" : 1}})
+                await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"level" : 1}, "$set" : {"xp" : 0}})
                 
                 embed = Embed(title="**-- LEVEL UP --**", description=f"***{message.author.mention} JUST LEVELED TO {level+1}\nCONGRATULATIONS!***", color=discord.Color.random())
                 await message.channel.send(embed=embed)
@@ -147,7 +147,7 @@ class Economy(commands.Cog):
 
 
     async def time_left(self, last_smth : datetime):
-        remaining = timedelta(hours=6) - (datetime.now() - last_smth)
+        remaining = timedelta(hours=24) - (datetime.now() - last_smth)
         hours, remainder = divmod(remaining.seconds, 3600)
         minutes = remainder // 60
         return hours, minutes 
