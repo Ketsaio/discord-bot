@@ -3,8 +3,9 @@
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
 ![Library](https://img.shields.io/badge/discord.py-2.0%2B-purple)
 ![Database](https://img.shields.io/badge/MongoDB-Ready-green)
+![Music](https://img.shields.io/badge/Lavalink-Music-red)
 ![License](https://img.shields.io/badge/license-MIT-orange)
-![Status](https://img.shields.io/badge/status-In%20Development-yellow)
+![Status](https://img.shields.io/badge/status-Stable-green)
 
 A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` and `LavaLink`. Focused on moderation, economy, ticket systems, and fun features.
 
