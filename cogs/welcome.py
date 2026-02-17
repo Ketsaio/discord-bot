@@ -97,7 +97,7 @@ class Welcome(commands.Cog):
             interaction (discord.Interaction): The interaction context.
         '''
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
         
         guild_data = await self.get_guild(interaction)
@@ -109,7 +109,7 @@ class Welcome(commands.Cog):
 
         await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"welcome.enabled" : not welcome_state}})
 
-        await interaction.response.send_message(f"Welcome messages are now {'enabled' if not welcome_state else 'disabled'}!")
+        await interaction.response.send_message(f"Welcome messages are now {'enabled' if not welcome_state else 'disabled'}!", ephemeral=True)
 
         
     @app_commands.command(name="welcome_messages_setup", description="Setup everything needed for welcome messages!")
@@ -119,7 +119,7 @@ class Welcome(commands.Cog):
         Sets up welcome messages on the server.
 
         Arguments:
-            interaction (discord.        player : wavelink = interaction.guild.voice_client
+            interaction (discord.player : wavelink = interaction.guild.voice_client
 
         if not player:
             player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
@@ -139,7 +139,7 @@ class Welcome(commands.Cog):
             desc (str): Optional custom embed description.  
         '''
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
 
         if(not channel_name):

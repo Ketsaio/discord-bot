@@ -593,7 +593,7 @@ class BattleView(discord.ui.View):
             button (discord.ui.Button): Button that was clicked.
         '''
         if interaction.user.id != self.curr_playing:
-            await interaction.response.send_message("Its not your turn yet!")
+            await interaction.response.send_message("Its not your turn yet!", ephemeral=True)
             return
 
         damage_to_deal = self.members[self.turn].pet_atk
@@ -622,7 +622,7 @@ class BattleView(discord.ui.View):
             button (discord.ui.Button): Button that was clicked.
         '''
         if interaction.user.id != self.curr_playing:
-            await interaction.response.send_message("Its not your turn yet!")
+            await interaction.response.send_message("Its not your turn yet!", ephemeral=True)
             return
 
         embed = Embed(title="BATTLE", description=f"{self.members[self.turn].member_name}s {self.members[self.turn].pet_name} healed for {self.members[self.turn].regen()}", color=discord.Colour.green())

@@ -58,13 +58,9 @@ class Reaction_roles(commands.Cog):
 
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
         
-        if not (interaction.guild.me.guild_permissions.manage_channels or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!")
-            return
-                
         embed = Embed(title="Reaction roles embed creator!", description="Select roles from the dropdown menu")
 
         view = RoleSetupView(channel)

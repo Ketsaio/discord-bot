@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, Embed
 from datetime import datetime, timedelta, timezone
 import asyncio
 import re
@@ -295,10 +295,6 @@ class Automod(commands.Cog):
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
             await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
-        
-        if not (interaction.guild.me.guild_permissions.manage_messages or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!", ephemeral=True)
-            return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -338,12 +334,9 @@ class Automod(commands.Cog):
         """
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
         
-        if not (interaction.guild.me.guild_permissions.manage_channels or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!")
-            return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
 
@@ -379,11 +372,7 @@ class Automod(commands.Cog):
         """
 
         if not (interaction.user.guild_permissions.manage_roles or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
-            return
-        
-        if not (interaction.guild.me.guild_permissions.manage_roles or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
 
         guild_data = await self.get_guild(interaction)
@@ -399,10 +388,16 @@ class Automod(commands.Cog):
 
         if jail_role in member.roles:
             await self.safe_remove_role(member, jail_role)
-            await interaction.response.send_message(f"{member.name} has been unjailed", ephemeral=True)
+
+            embed = Embed(title="**⛓️ JAIL TIME**", description=f"**{member.mention} HAS BEEN REALESED!**", color=discord.Color.dark_blue())
+
+            await interaction.response.send_message(embed=embed)
         else:
             await self.safe_add_role(member, jail_role)
-            await interaction.response.send_message(f"{member.name} has been jailed", ephemeral=True)
+
+            embed = Embed(title="**⛓️ JAIL TIME**", description=f"**{member.mention} HAS BEEN SENT TO JAIL!**", color=discord.Color.dark_blue())
+            
+            await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="ban", description = "Bans user")
     async def ban(self, interaction : discord.Interaction, member : discord.Member):    # to add: deleted days and reason
@@ -415,15 +410,14 @@ class Automod(commands.Cog):
         """
 
         if not (interaction.user.guild_permissions.ban_members or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
-            return
-        
-        if not (interaction.guild.me.guild_permissions.ban_members or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
 
         await member.ban()
-        await interaction.response.send_message(f"{member.name} has been banned!", ephemeral=True)
+        
+        embed = Embed(title="**🔨 BAN HAMMER **", description=f"**{member.mention} HAS BEEN BANNED!**", color=discord.Color.red())
+
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="timeout", description = "Timeout user")
     @app_commands.describe(member = "Person to timeout", time = "How much time? (in minutes)")
@@ -437,19 +431,21 @@ class Automod(commands.Cog):
             time (int): Timeout duration in minutes (default is 10).
         """
         if not (interaction.user.guild_permissions.moderate_members or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
-            return
-        
-        if not (interaction.guild.me.guild_permissions.moderate_members or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
         
         if member.is_timed_out():
             await member.timeout(None)
-            await interaction.response.send_message(f"{member.name} can speak again")
+
+            embed = Embed(title="**🔇 MUTE INCOMING**", description=f"**{member.mention} HAS BEEN UNMUTED!**", color=discord.Color.dark_grey())
+
+            await interaction.response.send_message(embed=embed)
         else:
             await member.timeout(datetime.now(timezone.utc) + timedelta(minutes=time))
-            await interaction.response.send_message(f"{member.name} has been timeouted")
+
+            embed = Embed(title="**🔇 MUTE INCOMING**", description=f"**{member.mention} HAS BEEN MUTED FOR {time} MINUTES!**", color=discord.Color.dark_grey())
+
+            await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="add_to_bad_words", description="Adds word to banned words in guild")
     @app_commands.describe(bad_word="Bad word that will be banned from this guild")
@@ -463,11 +459,7 @@ class Automod(commands.Cog):
         """
 
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
-            return
-        
-        if not (interaction.guild.me.guild_permissions.manage_messages or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!", ephemeral=True)
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
 
         await interaction.response.defer(ephemeral=True, thinking=True)
@@ -503,11 +495,7 @@ class Automod(commands.Cog):
             interaction (discord.Interaction): Context interaction.
         """
         if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
-            return
-        
-        if not (interaction.guild.me.guild_permissions.manage_messages or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!", ephemeral=True)
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
         
         guild_data = await self.get_guild(interaction)

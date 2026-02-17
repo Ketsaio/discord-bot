@@ -56,11 +56,7 @@ class Tickets(commands.Cog):
         '''
 
         if not (interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator):
-            await interaction.response.send_message("U dont have permissions to do that!")
-            return
-        
-        if not (interaction.guild.me.guild_permissions.manage_channels or interaction.guild.me.guild_permissions.administrator):
-            await interaction.response.send_message("I dont have permissions to do that!")
+            await interaction.response.send_message("U dont have permissions to do that!", ephemeral=True)
             return
 
         embed = Embed(

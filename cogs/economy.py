@@ -70,7 +70,7 @@ class Economy(commands.Cog):
         if xp >= 8 * level:
             await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"level" : 1}, "$set" : {"xp" : 0}})
             
-            embed = Embed(title="**-- LEVEL UP --**", description=f"***{message.author.mention} JUST LEVELED TO {level+1}\nCONGRATULATIONS!***", color=discord.Color.random())
+            embed = Embed(title="**🔊 LEVEL UP **", description=f"**{message.author.mention} JUST LEVELED UP TO LEVEL{level+1}\nCONGRATULATIONS!**", color=discord.Color.random())
             await message.channel.send(embed=embed)
     
 
@@ -88,7 +88,9 @@ class Economy(commands.Cog):
 
         balance = member_data.get("coins", 0)
 
-        await interaction.response.send_message(f"Your balance: {balance}")
+        embed = Embed(title="**🪙 NATIONAL BANK**", description=f"**Your balance: ${balance}**", color=discord.Color.gold())
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         
     @app_commands.command(name="daily_reward", description="Claim your global daily reward")
     async def daily_reward(self, interaction : discord.Interaction):
@@ -103,13 +105,18 @@ class Economy(commands.Cog):
 
         if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
             await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"cooldowns.last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
-            await interaction.response.send_message("U claimed your daily! Come back in 24h")
+
+            embed = Embed(title="**📅 DAILY REWARD**", description="**U claimed your daily! Come back in 24h**", color=discord.Color.green())
+        
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             
         elif datetime.now() - last_daily < timedelta(hours=24):
 
             hours, minutes = await self.time_left(last_daily)
 
-            await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {hours} godzin i {minutes} minut")
+            embed = Embed(title="**📅 DAILY REWARD**", description=f"**U can claim next daily reward in {hours} hours and {minutes} minutes**", color=discord.Color.green())
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="inventory", description="Take a look into your inventory")
     async def inventory(self, interaction : discord.Interaction):
@@ -136,7 +143,7 @@ class Economy(commands.Cog):
                 inline=True
             )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
     async def time_left(self, last_smth : datetime):
