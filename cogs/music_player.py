@@ -240,7 +240,7 @@ class Music_player(commands.Cog):
         try:
             node = wavelink.Node(
                 uri="http://localhost:2333", 
-                password=self.passw   # załadować passy z .env   
+                password=self.passw 
             )
             await wavelink.Pool.connect(nodes=[node], client=self.bot)
             print("Wavelink: Connected succefully!")

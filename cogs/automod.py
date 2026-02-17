@@ -389,7 +389,7 @@ class Automod(commands.Cog):
         if jail_role in member.roles:
             await self.safe_remove_role(member, jail_role)
 
-            embed = Embed(title="**⛓️ JAIL TIME**", description=f"**{member.mention} HAS BEEN REALESED!**", color=discord.Color.dark_blue())
+            embed = Embed(title="**⛓️ JAIL TIME**", description=f"**{member.mention} HAS BEEN RELEASED!**", color=discord.Color.dark_blue())
 
             await interaction.response.send_message(embed=embed)
         else:
@@ -504,10 +504,10 @@ class Automod(commands.Cog):
 
         if not is_enabled:
             await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"automod.anti_bad_words" : True}})
-            await interaction.response.send_message("Scanning for bad words in this guild!")
+            await interaction.response.send_message("Scanning for bad words in this guild!", ephemeral=True)
         else:
             await self.bot.database["guilds"].update_one({"_id" : str(interaction.guild_id)}, {"$set" : {"automod.anti_bad_words" : False}})
-            await interaction.response.send_message("Scanning turned off.")
+            await interaction.response.send_message("Scanning turned off.", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Automod(bot))

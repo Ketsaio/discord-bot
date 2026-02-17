@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, Embed
 import json
 from functools import partial
 from asyncio import sleep
@@ -255,6 +255,7 @@ class ItemShop(discord.ui.Select):
 
         member_coins = member_data.get("coins", 0)
         member_inv = member_data.get("inventory", {})
+        color = await self.color_picker(chosen_item['rarity'])
 
         if member_coins < chosen_item['cost']:
             await interaction.response.send_message("**U don't have enough coins!**", ephemeral=True)
@@ -270,8 +271,11 @@ class ItemShop(discord.ui.Select):
             jail_role = await self.get_jail_role(interaction)
 
             if jail_role in interaction.user.roles:
+
+                embed = Embed(title="Congratulations!", description=f"*U are free!*", color=color)
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
                 await interaction.user.remove_roles(jail_role)
-                await interaction.response.send_message("U are free!", ephemeral=True)
                 await self.deduct_money(interaction, chosen_item)
             else:
                 await interaction.response.send_message("U are not in jail!", ephemeral=True)
@@ -281,7 +285,10 @@ class ItemShop(discord.ui.Select):
             await self.add_item_to_user_inv(interaction, chosen_label, chosen_item)
             await self.deduct_money(interaction, chosen_item)
             await self.pet_activate(interaction, chosen_label)
-            await interaction.response.send_message(f"U bought **{chosen_label}**", ephemeral=True)
+
+            embed = Embed(title="Congratulations!", description=f"*You just bought {chosen_label}!*", color=color)
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
         else:
             await interaction.response.send_message(f"*U already have this pet!*", ephemeral=True)
 

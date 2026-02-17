@@ -169,7 +169,8 @@ class Gambling(commands.Cog):
 
     @app_commands.command(name="roulette", description="Win some money!")
     @app_commands.describe(amount="Amount of money to gamble", color="Pick color", number="Pick number")
-    async def roulette(self, interaction: discord.Interaction, amount: int, color: str, number: int = None) -> None:
+    @app_commands.choices(color=[app_commands.Choice(name="Red", value="red"), app_commands.Choice(name="Black", value="black"), app_commands.Choice(name="Green", value="green")])
+    async def roulette(self, interaction: discord.Interaction, amount: int, color : app_commands.Choice[str], number: int = None) -> None:
         '''
         Simulates gambling game: "roulette".
 
@@ -190,10 +191,6 @@ class Gambling(commands.Cog):
         if amount <= 0 or amount >= 1000000:
             await interaction.response.send_message("Please select 1-1000000 coins!", ephemeral=True)
             return
-        
-        if color not in ["red", "black", "green"]:
-            await interaction.response.send_message("Please select valid color! (red, green, black)", ephemeral=True)
-            return
 
         if number is not None:
             if number < 0 or number > 36:
@@ -212,7 +209,7 @@ class Gambling(commands.Cog):
             result_color = "red"
 
         win = 0
-        if result_color == color and result == number:
+        if result_color == color.value and result == number:
             win = amount * 70
         elif result == number:
             win = amount * 35
@@ -313,11 +310,11 @@ class Gambling(commands.Cog):
             return
         
         if interaction.user.id == member.id:
-            await interaction.response.send_message("You cant rob yourself!")
+            await interaction.response.send_message("You cant rob yourself!", ephemeral=True)
             return
         
         if member.id == interaction.client.user.id:
-            await interaction.response.send_message("You cant rob me!")
+            await interaction.response.send_message("You cant rob me!", ephemeral=True)
             return
 
         getting_robbed_money = getting_robbed.get("coins", 0)

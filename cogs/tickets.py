@@ -57,8 +57,8 @@ class Tickets(commands.Cog):
             return
 
         embed = Embed(
-            title="Siemano",
-            description="Aby stworzyć ticket kliknij przycisk niżej!",
+            title="Welcome!",
+            description="Click a button below to create ticket!",
             color=discord.Color.dark_green()
         )
         await interaction.response.send_message(embed=embed, view=TicketView())

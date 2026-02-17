@@ -37,7 +37,6 @@ class MyBot(commands.Bot):
         self.synced = False
 
     async def setup_hook(self):
-
         self.tree.on_error = self.on_tree_error
 
         for file in os.listdir("cogs"):         # loads all .py files from cogs folder as extentions
@@ -128,7 +127,7 @@ class MyBot(commands.Bot):
 bot = MyBot(command_prefix="?", database = database)
 
 @bot.tree.command(name="sync", description="ADMIN COMMAND ONLY")
-@app_commands.describe(option="Wybierz: 'global' (wszyscy) lub 'guild' (ten serwer)")
+@app_commands.describe(option="GLOBAL | LOCAL")
 @app_commands.choices(option=[app_commands.Choice(name="Global", value="global"), app_commands.Choice(name="Local", value="guild")])
 async def sync(interaction: discord.Interaction, option: app_commands.Choice[str]):
     if interaction.user.id != int(DEV_ID):
@@ -140,15 +139,15 @@ async def sync(interaction: discord.Interaction, option: app_commands.Choice[str
     try:
         if option.value == "global":
             synced = await bot.tree.sync()
-            await interaction.followup.send(f"Synchronizing **{len(synced)}** commands globally!")
+            await interaction.followup.send("Synced commands globally!")
         
         elif option.value == "guild":
-            bot.tree.clear_commands(guild=interaction.guild)
-            await bot.tree.sync(guild=interaction.guild)
-            await interaction.followup.send(f"Synchronizing **{len(synced)}** commands globally!")
+            bot.tree.copy_global_to(guild=interaction.guild)
+            synced = await bot.tree.sync(guild=interaction.guild)
+            await interaction.followup.send("Synced commands locally!")
 
     except Exception as e:
-        await interaction.followup.send(f"❌ Synchronization error: {e}")
+        await interaction.followup.send(f"Sync error: {e}")
 
 @bot.event
 async def on_ready():
