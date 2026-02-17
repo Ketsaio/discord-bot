@@ -6,6 +6,7 @@ from discord.ext import commands
 from pymongo import AsyncMongoClient
 from pymongo.errors import PyMongoError
 from cogs.views import TicketView, InTicketView, AfterTicketView, DynamicRoleButton
+from aiohttp import ClientConnectionError
 import logging
 import datetime
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO = os.getenv("MONGO_URL")
-
+DEV_ID = os.getenv("DEV_ID")
 GUILD_ID = 1415448304157987008
 
 
@@ -71,37 +72,42 @@ class MyBot(commands.Bot):
             if isinstance(error, discord.Forbidden):
                 logger.warning(f"Forbidden error in '{location}': {error}")
                 msg = "I don't have enough permissions to perform this action!"
-                return await self._respond_to_error(interaction, msg)
+                return await self._respond_to_error(interaction, msg, False)
 
             if isinstance(error, discord.HTTPException):
                 logger.error(f"Discord API Error in '{location}': {error}")
                 msg = "A connection error occurred with Discord servers."
-                return await self._respond_to_error(interaction, msg)
+                return await self._respond_to_error(interaction, msg, True)
 
             if isinstance(error, ValueError):
                 logger.warning(f"Value error in '{location}': {error}")
                 msg = "Invalid value provided for this command."
-                return await self._respond_to_error(interaction, msg)
+                return await self._respond_to_error(interaction, msg, False)
 
             if isinstance(error, app_commands.CommandOnCooldown):
                 msg = f"Command is on cooldown. Try again in {error.retry_after:.2f}s."
-                return await self._respond_to_error(interaction, msg)
+                return await self._respond_to_error(interaction, msg, False)
             
             if isinstance(error, PyMongoError):
                 logger.exception(f"PyMongoError in '{location}' : {error}")
                 msg = "Database error, your data might not been saved."
-                return await self._respond_to_error(interaction, msg)
+                return await self._respond_to_error(interaction, msg, True)
             
             if isinstance(error, discord.ClientException):
                 logger.warning(f"Client logic error in '{location}': {error}")
-                msg = f"Action failed {error}"
-                return await self._respond_to_error(interaction, msg)
+                msg = f"Action failed {error}."
+                return await self._respond_to_error(interaction, msg, False)
+            
+            if isinstance(error, ClientConnectionError):
+                logger.exception(f"Aiohttp error in '{location}': {error}")
+                msg = f"Cant download gif right now."
+                return await self._respond_to_error(interaction, msg, True)
 
             logger.error(f"Unhandled error in '{location}':", exc_info=error)
             msg = "An unexpected error occurred. The developers have been notified."
-            await self._respond_to_error(interaction, msg)
+            await self._respond_to_error(interaction, msg, True)
 
-    async def _respond_to_error(self, interaction: discord.Interaction, message: str):
+    async def _respond_to_error(self, interaction: discord.Interaction, message: str, notify_dev : bool):
         try:
             if interaction.response.is_done():
                 await interaction.followup.send(message, ephemeral=True)
@@ -110,10 +116,47 @@ class MyBot(commands.Bot):
         except:
             pass
 
+        if notify_dev:
+            try:
+                dev = await self.fetch_user(int(DEV_ID))
+                await dev.send(message)
+            except discord.Forbidden:
+                print("UNBLOCK ME, I NEED TO SEND U DM!")
+            except Exception as e:
+                print(f"Error while sending DM: {e}")
+
 bot = MyBot(command_prefix="?", database = database)
+
+@bot.tree.command(name="sync", description="ADMIN COMMAND ONLY")
+@app_commands.describe(option="Wybierz: 'global' (wszyscy) lub 'guild' (ten serwer)")
+@app_commands.choices(option=[app_commands.Choice(name="Global", value="global"), app_commands.Choice(name="Local", value="guild")])
+async def sync(interaction: discord.Interaction, option: app_commands.Choice[str]):
+    if interaction.user.id != int(DEV_ID):
+        await interaction.response.send_message("U are not a dev!", ephemeral=True)
+        return 
+
+    await interaction.response.defer(ephemeral=True)
+
+    try:
+        if option.value == "global":
+            synced = await bot.tree.sync()
+            await interaction.followup.send(f"Synchronizing **{len(synced)}** commands globally!")
+        
+        elif option.value == "guild":
+            bot.tree.clear_commands(guild=interaction.guild)
+            await bot.tree.sync(guild=interaction.guild)
+            await interaction.followup.send(f"Synchronizing **{len(synced)}** commands globally!")
+
+    except Exception as e:
+        await interaction.followup.send(f"❌ Synchronization error: {e}")
 
 @bot.event
 async def on_ready():
+
+    if hasattr(bot, 'synced') and bot.synced:
+        print("Bot reconnected (Skipping sync).")
+        return
+
     print(f"{bot.user} READY FOR FLIGHT")
     guild = discord.Object(id=GUILD_ID)
     bot.tree.copy_global_to(guild=guild)
@@ -131,4 +174,4 @@ if __name__ == "__main__":
     formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
     logging_handler.setFormatter(formatter)
 
-    bot.run(TOKEN, log_handler=logging_handler, log_level=logging.INFO)
+    bot.run(TOKEN, log_handler=logging_handler, log_level=logging.INFO, root_logger=True)

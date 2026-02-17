@@ -57,29 +57,26 @@ class Pets(commands.Cog):
         Arguments:
             message (discord.Message): Message for following up with gif.
         '''
-        try:
-            chance = randint(1,10)
-            if chance >= 9:
-                query = "spongebob"
-                url = f"https://tenor.googleapis.com/v2/search?q={query}&key={self.tenor}&limit=30"
+        chance = randint(1,10)
+        if chance >= 9:
+            query = "spongebob"
+            url = f"https://tenor.googleapis.com/v2/search?q={query}&key={self.tenor}&limit=30"
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as response:
-                        data = await response.json()
-                    if "results" in data and len(data["results"]) > 0:
-                        result = choice(data["results"])
-                        gif_url = result["media_formats"]["gif"]["url"]
-                        embed = discord.Embed(
-                            title="🦄 Unicorn activated!",
-                            description=f"Here's your gif:",
-                            color=discord.Colour.purple()
-                        )
-                        embed.set_image(url=gif_url)
-                        await message.channel.send(embed=embed)
-            
-            await self.add_pet_xp(randint(1,5), message)
-        except aiohttp.ClientConnectionError as e:
-            logger.error(f"Aiohttp Client Connection error in Pets.unicorn: {e}")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    data = await response.json()
+                if "results" in data and len(data["results"]) > 0:
+                    result = choice(data["results"])
+                    gif_url = result["media_formats"]["gif"]["url"]
+                    embed = discord.Embed(
+                        title="🦄 Unicorn activated!",
+                        description=f"Here's your gif:",
+                        color=discord.Colour.purple()
+                    )
+                    embed.set_image(url=gif_url)
+                    await message.channel.send(embed=embed)
+        
+        await self.add_pet_xp(randint(1,5), message)
 
     async def parrot(self, message : discord.Message) -> None:
         '''
