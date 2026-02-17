@@ -510,6 +510,13 @@ class Automod(commands.Cog):
         Arguments:
             interaction (discord.Interaction): Context interaction.
         """
+        if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
+            await interaction.response.send_message("U dont have permissions to do that!")
+            return
+        
+        if not (interaction.guild.me.guild_permissions.manage_messages or interaction.guild.me.guild_permissions.administrator):
+            await interaction.response.send_message("I dont have permissions to do that!", ephemeral=True)
+            return
         
         guild_data = await self.get_guild(interaction)
 

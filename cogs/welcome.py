@@ -98,6 +98,11 @@ class Welcome(commands.Cog):
             interaction (discord.Interaction): The interaction context.
         '''
         try:
+
+            if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
+                await interaction.response.send_message("U dont have permissions to do that!")
+                return
+            
             guild_data = await self.get_guild(interaction)
 
             if not guild_data:
@@ -125,6 +130,11 @@ class Welcome(commands.Cog):
             desc (str): Optional custom embed description.  
         '''
         try:
+
+            if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.administrator):
+                await interaction.response.send_message("U dont have permissions to do that!")
+                return
+
             if(not channel_name):
                 await interaction.response.send_message("Wrong channel name!", ephemeral=True)
                 return

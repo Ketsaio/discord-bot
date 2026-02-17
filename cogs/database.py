@@ -58,7 +58,7 @@ class Database(commands.Cog):
                 await self.add_guild_to_database(discord_Obj.guild)
                 guild_data = await self.bot.database["guilds"].find_one({"_id": guild_id})
             return guild_data
-        except PyMongoError as e:
+        except PyMongoError as e:   
             logger.exception(f"PyMongoError in Database.find_or_create_guild: {e}")
             return None
 
@@ -191,7 +191,7 @@ class Database(commands.Cog):
             member_id (int): Id of the discord member.
         """
         try:
-            await self.bot.database["users"].insert_one({
+            await self.bot.database["users"].update_one({
                 "_id" : str(member_id),
                 "coins" : 0,
                 "xp" :  0,
@@ -204,7 +204,9 @@ class Database(commands.Cog):
                 "level_up_notification" : True,
                 "inventory" : {},
                 "active_pet" : None
-            })
+            },
+            upsert = True
+            )
         except PyMongoError as e:
             logger.exception(f"PyMongoError in Database.add_member_to_database: {e}")
 

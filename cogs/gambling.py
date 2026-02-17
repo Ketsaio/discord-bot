@@ -197,8 +197,9 @@ class Gambling(commands.Cog):
             await interaction.response.send_message("Please select 1-1000000 coins!", ephemeral=True)
             return
         
-        if color is None:
-            color = choice(["red", "black", "green"])
+        if color not in ["red", "black", "green"]:
+            await interaction.response.send_message("Please select valid color! (red, green, black)", ephemeral=True)
+            return
 
         if number is not None:
             if number < 0 or number > 36:
@@ -325,6 +326,10 @@ class Gambling(commands.Cog):
         
         if interaction.user.id == member.id:
             await interaction.response.send_message("You cant rob yourself!")
+            return
+        
+        if member.id == interaction.client.user.id:
+            await interaction.response.send_message("You cant rob me!")
             return
 
         getting_robbed_money = getting_robbed.get("coins", 0)

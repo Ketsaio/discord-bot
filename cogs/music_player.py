@@ -292,7 +292,7 @@ class Music_player(commands.Cog):
                 await interaction.response.send_message(msg, ephemeral=True)
             return True
 
-        if player and player.playing:
+        if player and player.channel:
             if interaction.user.voice.channel.id != player.channel.id:
 
                 msg = f"Bot is playing music on {player.channel} voice channel!"

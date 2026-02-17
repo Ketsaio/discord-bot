@@ -256,13 +256,13 @@ class FinalSetupModal(Modal, title="RR Configuration"):
             button.item.label = role.name
 
             if i < len(emojis):
-                button.item.emoji = emojis[i]
+                if emojis[i]:
+                    button.item.emoji = emojis[i]
 
             if i < len(colors):
-                try:
-                    button.item.style = self.parse_style(colors[i])
-                except Exception:
-                    pass
+                new_style = self.parse_style(colors[i])
+                if new_style is not None:
+                    button.item.style = new_style
 
             view.add_item(button)
 
