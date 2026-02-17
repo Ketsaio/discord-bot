@@ -342,25 +342,22 @@ class MusicButton(discord.ui.Button):
 
         if not interaction.user.voice:
             return
-        try:
-            player : wavelink = interaction.guild.voice_client
 
-            if not player:
-                player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
-            else:
-                if player.channel.id != interaction.user.voice.channel.id:
-                    return
-                
-            if self.mode:
+        player : wavelink = interaction.guild.voice_client
+
+        if not player:
+            player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
+        else:
+            if player.channel.id != interaction.user.voice.channel.id:
+                return
+            
+        if self.mode:
+            player.queue.put(self.track)
+        else:
+            if player.playing:
                 player.queue.put(self.track)
             else:
-                if player.playing:
-                    player.queue.put(self.track)
-                else:
-                    await player.play(self.track)
-
-        except discord.ClientException as e:
-            logger.error(f"ClientException in Views.MusicButton.callback: {e}")
+                await player.play(self.track)
 
 
 class MenuForMusic(discord.ui.View):

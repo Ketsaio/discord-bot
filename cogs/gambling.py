@@ -5,7 +5,6 @@ from discord import app_commands
 from random import randint, choice
 from asyncio import sleep
 from datetime import datetime, timedelta
-from pymongo.errors import PyMongoError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -71,58 +70,55 @@ class Gambling(commands.Cog):
             await interaction.response.send_message("Please select 1-1000000 coins!", ephemeral=True)
             return
 
-        try:
-            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : -amount}})
 
-            colors = ["🟩","🟦", "🟪", "🟨", "🟥", "⬜"]
+        await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : -amount}})
 
-            embed = discord.Embed(
-                title="🎰🎰🎰",
-                description="*Jackpot this time!*",
-                color=discord.Color.red()
-            )
+        colors = ["🟩","🟦", "🟪", "🟨", "🟥", "⬜"]
 
+        embed = discord.Embed(
+            title="🎰🎰🎰",
+            description="*Jackpot this time!*",
+            color=discord.Color.red()
+        )
+
+        slot1, slot2, slot3 = choice(colors), choice(colors), choice(colors)
+
+        embed.add_field(
+                name="",
+                value=f"{slot1}|{slot2}|{slot3}"
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        await sleep(0.3)
+
+        for _ in range(8):
             slot1, slot2, slot3 = choice(colors), choice(colors), choice(colors)
-
-            embed.add_field(
-                    name="",
-                    value=f"{slot1}|{slot2}|{slot3}"
+            embed.set_field_at(
+                index=0,
+                name="",
+                value=f"{slot1}|{slot2}|{slot3}"
             )
-
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-
+            await interaction.edit_original_response(embed=embed)
             await sleep(0.3)
 
-            for _ in range(8):
-                slot1, slot2, slot3 = choice(colors), choice(colors), choice(colors)
-                embed.set_field_at(
-                    index=0,
-                    name="",
-                    value=f"{slot1}|{slot2}|{slot3}"
-                )
-                await interaction.edit_original_response(embed=embed)
-                await sleep(0.3)
+        if slot1 == slot2 == slot3:
+            win_amount = await self.rat_pet_activity(active_pet, amount*7)
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win_amount}})
+            embed_result = discord.Embed(
+                title="🎉 JACKPOT! 🎉",
+                description=f"All slots match! You won **{win_amount} coins**!",
+                color=discord.Colour.green()
+            )
+        else:
+            embed_result = discord.Embed(
+                title="💸 You lost",
+                description=f"Slots didn't match. You lost **{amount} coins**.",
+                color=discord.Colour.red()
+            )
 
-            if slot1 == slot2 == slot3:
-                win_amount = await self.rat_pet_activity(active_pet, amount*7)
-                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win_amount}})
-                embed_result = discord.Embed(
-                    title="🎉 JACKPOT! 🎉",
-                    description=f"All slots match! You won **{win_amount} coins**!",
-                    color=discord.Colour.green()
-                )
-            else:
-                embed_result = discord.Embed(
-                    title="💸 You lost",
-                    description=f"Slots didn't match. You lost **{amount} coins**.",
-                    color=discord.Colour.red()
-                )
-
-            await interaction.followup.send(embed=embed_result, ephemeral=True)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Gambling.automats: {e}")
-
-                    
+        await interaction.followup.send(embed=embed_result, ephemeral=True)
+                   
 
     @app_commands.command(name="scratches", description="Scratch your way to glory! 12$")
     async def scratches(self, interaction: discord.Interaction):
@@ -141,41 +137,39 @@ class Gambling(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        try:
-            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": -12}})
 
-            roll = randint(1, 100)
-            win = 0
-            if 1 <= roll <= 5:
-                win = randint(150, 250)
-            elif 6 <= roll <= 15:
-                win = randint(60, 120)
-            elif 16 <= roll <= 30:
-                win = randint(20, 50)
+        await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": -12}})
 
-            if win != 0:
-                win = await self.rat_pet_activity(active_pet, win)
-                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win}})
-                embed = Embed(
-                    title="🎉 You won!",
-                    description=f"You just won **{win} coins**!",
-                    color=Colour.green()
-                )
-            else:
-                embed = Embed(
-                    title="💸 You lost",
-                    description="Better luck next time! You lost your 12 coins.",
-                    color=Colour.red()
-                )
+        roll = randint(1, 100)
+        win = 0
+        if 1 <= roll <= 5:
+            win = randint(150, 250)
+        elif 6 <= roll <= 15:
+            win = randint(60, 120)
+        elif 16 <= roll <= 30:
+            win = randint(20, 50)
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-        except PyMongoError as e:
-             logger.exception(f"PyMongoError in Gambling.scratches: {e}")
+        if win != 0:
+            win = await self.rat_pet_activity(active_pet, win)
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win}})
+            embed = Embed(
+                title="🎉 You won!",
+                description=f"You just won **{win} coins**!",
+                color=Colour.green()
+            )
+        else:
+            embed = Embed(
+                title="💸 You lost",
+                description="Better luck next time! You lost your 12 coins.",
+                color=Colour.red()
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
     @app_commands.command(name="roulette", description="Win some money!")
     @app_commands.describe(amount="Amount of money to gamble", color="Pick color", number="Pick number")
-    async def roulette(self, interaction: discord.Interaction, amount: int, color: str = None, number: int = None):
+    async def roulette(self, interaction: discord.Interaction, amount: int, color: str, number: int = None):
         '''
         Simulates gambling game: "roulette".
 
@@ -206,44 +200,41 @@ class Gambling(commands.Cog):
                 await interaction.response.send_message("Please select number from 1-36", ephemeral=True)
                 return
 
-        try:
-            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": -amount}})
+        await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": -amount}})
 
-            result = randint(0, 36)
+        result = randint(0, 36)
 
-            if result == 0:
-                result_color = "green"
-            elif result % 2 == 0:
-                result_color = "black"
-            else:
-                result_color = "red"
+        if result == 0:
+            result_color = "green"
+        elif result % 2 == 0:
+            result_color = "black"
+        else:
+            result_color = "red"
 
-            win = 0
-            if result_color == color and result == number:
-                win = amount * 70
-            elif result == number:
-                win = amount * 35
-            elif result_color == color:
-                win = amount * 2
+        win = 0
+        if result_color == color and result == number:
+            win = amount * 70
+        elif result == number:
+            win = amount * 35
+        elif result_color == color:
+            win = amount * 2
 
-            if win > 0:
-                win = await self.rat_pet_activity(active_pet, win)
-                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win}})
-                embed = Embed(
-                    title="🎉 You won!",
-                    description=f"The roulette landed on **{result} ({result_color})**\nYou won **{win} coins**!",
-                    color=Colour.green()
-                )
-            else:
-                embed = Embed(
-                    title="💸 You lost",
-                    description=f"The roulette landed on **{result} ({result_color})**\nBetter luck next time!",
-                    color=Colour.red()
-                )
+        if win > 0:
+            win = await self.rat_pet_activity(active_pet, win)
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$inc": {"coins": win}})
+            embed = Embed(
+                title="🎉 You won!",
+                description=f"The roulette landed on **{result} ({result_color})**\nYou won **{win} coins**!",
+                color=Colour.green()
+            )
+        else:
+            embed = Embed(
+                title="💸 You lost",
+                description=f"The roulette landed on **{result} ({result_color})**\nBetter luck next time!",
+                color=Colour.red()
+            )
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Gambling.roulette: {e}")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
     @app_commands.command(name = "crime", description = "go do a crime")
@@ -261,48 +252,45 @@ class Gambling(commands.Cog):
         
         last_crime = member_data.get("cooldowns", {}).get("last_crime")
 
-        try:
-            if last_crime is None or datetime.now() - last_crime >= timedelta(hours=3):
-                chance = randint(1,10)
-                if chance <= 6:
-                    money_from_crime = randint(50, 150)
-                    money_from_crime = await self.squid_pet_activity(active_pet, money_from_crime)
-                    await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
-                        "coins" : money_from_crime}})
-                    
-                    embed = Embed(
-                        title="💸 You commited a crime!",
-                        description=f"U have a {money_from_crime} more illegal coins!",
-                        color=Colour.green()
-                    )
-
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                else:
-                    bail = randint(75, 125)
-                    await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
-                        "coins" : -bail}})
-                    
-                    embed = Embed(
-                        title="⛓️ You got caught...",
-                        description=f"U have to pay {bail} for bail",
-                        color=Colour.red()
-                    )
-
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-
-            elif datetime.now() - last_crime < timedelta(hours=3):
-
-                hours, minutes = await self.time_left(last_crime, 3)
-
+        if last_crime is None or datetime.now() - last_crime >= timedelta(hours=3):
+            chance = randint(1,10)
+            if chance <= 6:
+                money_from_crime = randint(50, 150)
+                money_from_crime = await self.squid_pet_activity(active_pet, money_from_crime)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
+                    "coins" : money_from_crime}})
+                
                 embed = Embed(
-                    title="⏰ MORE TIME",
-                    description=f"U need to wait {hours} hours and {minutes} to commit a crime again!",
-                    color=Colour.orange()
+                    title="💸 You commited a crime!",
+                    description=f"U have a {money_from_crime} more illegal coins!",
+                    color=Colour.green()
                 )
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Gambling.crime: {e}")
+            else:
+                bail = randint(75, 125)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_crime" : datetime.now()}, "$inc" : {
+                    "coins" : -bail}})
+                
+                embed = Embed(
+                    title="⛓️ You got caught...",
+                    description=f"U have to pay {bail} for bail",
+                    color=Colour.red()
+                )
+
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        elif datetime.now() - last_crime < timedelta(hours=3):
+
+            hours, minutes = await self.time_left(last_crime, 3)
+
+            embed = Embed(
+                title="⏰ MORE TIME",
+                description=f"U need to wait {hours} hours and {minutes} to commit a crime again!",
+                color=Colour.orange()
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name = "steal", description = "rob someone")
     @app_commands.describe(member = "discord member")
@@ -334,50 +322,48 @@ class Gambling(commands.Cog):
 
         getting_robbed_money = getting_robbed.get("coins", 0)
         last_steal = robber.get("cooldowns", {}).get("last_steal")
-        try:
-            if last_steal is None or datetime.now() - last_steal >= timedelta(hours=6):
-                chance = randint(1,10)
-                if chance >= 8:
-                    how_much = randint(1,5)
-                    how_much /= 10
-                    stolen = int(getting_robbed_money * how_much)
-                    stolen = await self.squid_pet_activity(active_robber_pet, stolen)
-                    await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {"coins" : stolen}})
-                    await self.bot.database["users"].update_one({"_id" : str(member.id)}, {"$inc" : {"coins" : -stolen}})
 
-                    embed = Embed(
-                        title="🥷 Succesful robbery!",
-                        description=f"{interaction.user.mention} just robbed {int(stolen)} from {member.mention}!",
-                        color=Colour.green()
-                    )
-
-                    await interaction.response.send_message(embed=embed)
-                else:
-                    bail = randint(75, 125)
-                    await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {
-                        "coins" : -bail}})
-                    
-                    embed = Embed(
-                        title="⛓️ You got caught...",
-                        description=f"U have to pay {bail} for bail",
-                        color=Colour.red()
-                    )
-
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-            
-            elif datetime.now() - last_steal < timedelta(hours=6):
-
-                hours, minutes = await self.time_left(last_steal, 6)
+        if last_steal is None or datetime.now() - last_steal >= timedelta(hours=6):
+            chance = randint(1,10)
+            if chance >= 8:
+                how_much = randint(1,5)
+                how_much /= 10
+                stolen = int(getting_robbed_money * how_much)
+                stolen = await self.squid_pet_activity(active_robber_pet, stolen)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {"coins" : stolen}})
+                await self.bot.database["users"].update_one({"_id" : str(member.id)}, {"$inc" : {"coins" : -stolen}})
 
                 embed = Embed(
-                    title="⏰ MORE TIME",
-                    description=f"U need to wait {hours} hours and {minutes} to steal from someone again!",
-                    color=Colour.orange()
+                    title="🥷 Succesful robbery!",
+                    description=f"{interaction.user.mention} just robbed {int(stolen)} from {member.mention}!",
+                    color=Colour.green()
+                )
+
+                await interaction.response.send_message(embed=embed)
+            else:
+                bail = randint(75, 125)
+                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"cooldowns.last_steal" : datetime.now()}, "$inc" : {
+                    "coins" : -bail}})
+                
+                embed = Embed(
+                    title="⛓️ You got caught...",
+                    description=f"U have to pay {bail} for bail",
+                    color=Colour.red()
                 )
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Gambling.steal: {e}")
+        
+        elif datetime.now() - last_steal < timedelta(hours=6):
+
+            hours, minutes = await self.time_left(last_steal, 6)
+
+            embed = Embed(
+                title="⏰ MORE TIME",
+                description=f"U need to wait {hours} hours and {minutes} to steal from someone again!",
+                color=Colour.orange()
+            )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def time_left(self, last_smth : datetime, hours : int):
             '''

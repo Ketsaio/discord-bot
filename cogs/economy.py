@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from discord import app_commands, Embed
 from random import randint
-from pymongo.errors import PyMongoError
 from datetime import datetime, timedelta
 import logging
 
@@ -58,24 +57,21 @@ class Economy(commands.Cog):
 
         if message.author.bot:
             return
-        try:
-            member_data = await self.get_member(message.author)
-            if member_data.get("active_pet", 0) == "doggo":
-                added_xp = randint(3,8)
-            else:
-                added_xp = randint(1,5)
-            await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : added_xp}})
-            member_data = await self.get_member(message.author)
-            xp = member_data.get("xp")
-            level = member_data.get("level")
-            if xp >= 8 * level:
-                await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"level" : 1}, "$set" : {"xp" : 0}})
-                
-                embed = Embed(title="**-- LEVEL UP --**", description=f"***{message.author.mention} JUST LEVELED TO {level+1}\nCONGRATULATIONS!***", color=discord.Color.random())
-                await message.channel.send(embed=embed)
-
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Economy.on_message: {e}")
+        
+        member_data = await self.get_member(message.author)
+        if member_data.get("active_pet", 0) == "doggo":
+            added_xp = randint(3,8)
+        else:
+            added_xp = randint(1,5)
+        await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"xp" : added_xp}})
+        member_data = await self.get_member(message.author)
+        xp = member_data.get("xp")
+        level = member_data.get("level")
+        if xp >= 8 * level:
+            await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"level" : 1}, "$set" : {"xp" : 0}})
+            
+            embed = Embed(title="**-- LEVEL UP --**", description=f"***{message.author.mention} JUST LEVELED TO {level+1}\nCONGRATULATIONS!***", color=discord.Color.random())
+            await message.channel.send(embed=embed)
     
 
     @app_commands.command(name="balance", description="Check your balance!")
@@ -105,18 +101,15 @@ class Economy(commands.Cog):
         member_data = await self.get_member(interaction)
         last_daily = member_data.get("cooldowns", {}).get("last_daily_reward")
 
-        try:
-            if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
-                await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"cooldowns.last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
-                await interaction.response.send_message("U claimed your daily! Come back in 24h")
-                
-            elif datetime.now() - last_daily < timedelta(hours=24):
+        if last_daily is None or datetime.now() - last_daily >= timedelta(hours=24):
+            await self.bot.database["users"].update_one({"_id": str(interaction.user.id)}, {"$set" : {"cooldowns.last_daily_reward" : datetime.now()}, "$inc": {"coins": 100}})
+            await interaction.response.send_message("U claimed your daily! Come back in 24h")
+            
+        elif datetime.now() - last_daily < timedelta(hours=24):
 
-                hours, minutes = await self.time_left(last_daily)
+            hours, minutes = await self.time_left(last_daily)
 
-                await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {hours} godzin i {minutes} minut")
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Economy.daily_reward: {e}")
+            await interaction.response.send_message(f"Nagrode możesz odebrać dopiero za {hours} godzin i {minutes} minut")
 
     @app_commands.command(name="inventory", description="Take a look into your inventory")
     async def inventory(self, interaction : discord.Interaction):

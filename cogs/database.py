@@ -1,6 +1,5 @@
 from discord.ext import commands
 import discord
-from pymongo.errors import PyMongoError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,12 +26,9 @@ class Database(commands.Cog):
         Arguments:
             member (discord.Member): Member who just joined the guild.
         """
-        try:
-            member_in_database = await self.bot.database["users"].find_one({"_id" : str(member.id)})
-            if member_in_database is None:
-                await self.add_member_to_database(member)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Database.on_member_join: {e}")
+        member_in_database = await self.bot.database["users"].find_one({"_id" : str(member.id)})
+        if member_in_database is None:
+            await self.add_member_to_database(member)
 
     async def find_or_create_guild(self, discord_Obj) -> dict:
         """
@@ -52,15 +48,11 @@ class Database(commands.Cog):
             guild_id = str(discord_Obj.guild.id)
         else:
             return None
-        try:
+        guild_data = await self.bot.database["guilds"].find_one({"_id": guild_id})
+        if guild_data is None:
+            await self.add_guild_to_database(discord_Obj.guild)
             guild_data = await self.bot.database["guilds"].find_one({"_id": guild_id})
-            if guild_data is None:
-                await self.add_guild_to_database(discord_Obj.guild)
-                guild_data = await self.bot.database["guilds"].find_one({"_id": guild_id})
-            return guild_data
-        except PyMongoError as e:   
-            logger.exception(f"PyMongoError in Database.find_or_create_guild: {e}")
-            return None
+        return guild_data
 
     async def add_guild_to_database(self, guild):
         """
@@ -69,63 +61,37 @@ class Database(commands.Cog):
         Arguments:
             guild (discord.guild): The guild to add.
         """
-        try:
-            await self.bot.database["guilds"].insert_one({
-                    "_id": str(guild.id),
-                    "name": guild.name,
-                    "prefix": "?",
-                    "welcome" : {
+        await self.bot.database["guilds"].insert_one({
+                "_id": str(guild.id),
+                "name": guild.name,
+                "prefix": "?",
+                "welcome" : {
+                    "enabled" : False,
+                    "channel_id" : 0,
+                    "message" : None,
+                    "description" : None
+                },
+                "leave" : {
+                    "enabled" : False,
+                    "channel_id" : 0,
+                    "message" : None,
+                    "description" : None
+                },
+                "automod": {
+                    "banned_words" : [],
+                    "anti_bad_words" : False,
+                    "jail" : {
                         "enabled" : False,
-                        "channel_id" : 0,
-                        "message" : None,
-                        "description" : None
-                    },
-                    "leave" : {
-                        "enabled" : False,
-                        "channel_id" : 0,
-                        "message" : None,
-                        "description" : None
-                    },
-                    "automod": {
-                        "banned_words" : [
-                            "ass","asshole","asshat","asswipe","assclown","assmonkey","assmunch","arse","arsehole","balls","ballbag",
-                            "bastard","bastards","bitch","b1tch","bloody","bollocks","bollocking","bugger","butthead",
-                            "child of a bitch","cock","cockface","cocksucker","cunt","cuntface","cuntmuffin",
-                            "crap","damn","dick","d1ck","dickhead","dickwad","dipshit","dipshitface",
-                            "dingleberry","dumbass","dumbfuck","fag","faggot","fatherless","fuck","fuckface","fubar","fucktard","freakingass","fck","m0therfucker",
-                            "git","hell","idiot","idiotface","jerk","jackass","knob","knobhead","knucklehead",
-                            "moron","numpty","numptyface","piss","prat","plonker","shit","sh1t","shithead","shitbag","shitbagger","shitface","shitstain","shitlicker",
-                            "slut","son of a bitch","son of a whore","twat","twatwaffle","wanker","whore","daughter of a bitch","motherless","motherfucker","motherlover",
-                            "pussy","a$$hole","wazzock","chav","clown","tosser","freakingass","assclown","asshat","jackass","shitbagger",
-                            "dickmonger","cockmuncher","assmonkey","assmunch","twit","numskull","knobhead","gitface","bollocksed","idiotface",
-                            "shithead","dipshitface","dumbfuck","fuckface","fucktard","twatwaffle","shitstain","prickface","cockface",
-                            "cuntface","asswipe","asshat","butthead","dingleberry","dickwad","dipshit","fubar","fucktard","fuckhead",
-                            "shithead","motherlover","twatwaffle","shitstain","prickface","cockface","cuntface","arsehole","bollocksed",
-                            "gitface","knobhead","numptyface","dumbfuck","retard","idiotface","jackass","assclown","pussy","shitbagger",
-                            "dipshitface","freakingass","assmonkey","assmunch","cockmuncher","cuntmuffin","dickmonger","shitlicker",
-                            "fuk","fukk","fukking","shitt","sh1tt","bitchy","b!tch","d!ck","c0ck","c0cksucker","mothrfucker","assh0le","pissface",
-                            "wh0re","c0ckface","d!ckhead","fag0t","f@g","f@ggot","c*nt","sh*t","b!tches","b!tched","d!ckwad",
-                            "fatherless","motherless","son of a bitch","daughter of a bitch","motherfucker","son of a whore","child of a bitch",
-                            "momless","dadless","parentless","familyless","orphan","orphaned",
-                            "cretin","dunce","dumb","fool","idiotic","moronic","nincompoop","simpleton","twit","dope","loser","dork","nerd","weirdo",
-                            "noob","n00b","lame","scrub","trash","rekt","sux","suxx","suck","loserface","pwned","fail","fml","omgwtf","wtf","omfg","stfu","gtfo",
-                            "f@ck","sh!t","d!ck","b!tch","c*nt","a$$","@sshole","c0ck","f*ck","s#it","b@$tard","b@stard"
-                            ],
-                        "anti_bad_words" : False,
-                        "jail" : {
-                            "enabled" : False,
-                            "jail_role" : None,
-                            "jail_category" : None,
-                            "jail_text" : None,
-                            "jail_vc" : None
-                        }
-                    },
-                    "item_shop" : {
-                        "piece of paper" : 100
+                        "jail_role" : None,
+                        "jail_category" : None,
+                        "jail_text" : None,
+                        "jail_vc" : None
                     }
-                })
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Database.add_guild_to_database: {e}")
+                },
+                "item_shop" : {
+                    "piece of paper" : 100
+                }
+            })
 
     async def disable_jail(self, discord_Obj):
         """
@@ -134,10 +100,9 @@ class Database(commands.Cog):
         Arguments:
             discord_Obj: Discord object (Interaction, Channel, Member, Message)
         """
-        try:
-            await self.bot.database["guilds"].update_one({"_id" : str(discord_Obj.guild.id)}, {"$set" : {"automod.jail.enabled" : False}})
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Database.add_guild_to_database: {e}")
+
+        await self.bot.database["guilds"].update_one({"_id" : str(discord_Obj.guild.id)}, {"$set" : {"automod.jail.enabled" : False}})
+
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -147,13 +112,10 @@ class Database(commands.Cog):
         Arguments:
             guild (discord.guild): Guild data.
         """
-        try:
-            guild_in_database = await self.bot.database["guilds"].find_one({"_id" : str(guild.id)})
+        guild_in_database = await self.bot.database["guilds"].find_one({"_id" : str(guild.id)})
 
-            if guild_in_database is None:
-                await self.add_guild_to_database(guild)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Database.on_guild_join: {e}")
+        if guild_in_database is None:
+            await self.add_guild_to_database(guild)
 
     async def find_or_create__member(self, discord_Obj):
         """
@@ -173,15 +135,11 @@ class Database(commands.Cog):
         else:
             return None
 
-        try:
+        user_data = await self.bot.database["users"].find_one({"_id" : member_id})
+        if user_data is None:
+            await self.add_member_to_database(member_id)
             user_data = await self.bot.database["users"].find_one({"_id" : member_id})
-            if user_data is None:
-                await self.add_member_to_database(member_id)
-                user_data = await self.bot.database["users"].find_one({"_id" : member_id})
-            return user_data
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Database.find_or_create_member: {e}")
-            return None
+        return user_data
 
     async def add_member_to_database(self, member_id : int):
         """
@@ -190,25 +148,22 @@ class Database(commands.Cog):
         Arguments:
             member_id (int): Id of the discord member.
         """
-        try:
-            await self.bot.database["users"].update_one({
-                "_id" : str(member_id),
-                "coins" : 0,
-                "xp" :  0,
-                "level" : 1,
-                "cooldowns" : {
-                    "last_daily_reward" : None,
-                    "last_crime" : None,
-                    "last_steal" : None
-                },
-                "level_up_notification" : True,
-                "inventory" : {},
-                "active_pet" : None
+        await self.bot.database["users"].update_one({
+            "_id" : str(member_id),
+            "coins" : 0,
+            "xp" :  0,
+            "level" : 1,
+            "cooldowns" : {
+                "last_daily_reward" : None,
+                "last_crime" : None,
+                "last_steal" : None
             },
-            upsert = True
-            )
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Database.add_member_to_database: {e}")
+            "level_up_notification" : True,
+            "inventory" : {},
+            "active_pet" : None
+        },
+        upsert = True
+        )
 
 async def setup(bot):
     await bot.add_cog(Database(bot))

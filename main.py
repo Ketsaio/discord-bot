@@ -4,6 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from pymongo import AsyncMongoClient
+from pymongo.errors import PyMongoError
 from cogs.views import TicketView, InTicketView, AfterTicketView, DynamicRoleButton
 import logging
 import datetime
@@ -84,6 +85,16 @@ class MyBot(commands.Bot):
 
             if isinstance(error, app_commands.CommandOnCooldown):
                 msg = f"Command is on cooldown. Try again in {error.retry_after:.2f}s."
+                return await self._respond_to_error(interaction, msg)
+            
+            if isinstance(error, PyMongoError):
+                logger.exception(f"PyMongoError in '{location}' : {error}")
+                msg = "Database error, your data might not been saved."
+                return await self._respond_to_error(interaction, msg)
+            
+            if isinstance(error, discord.ClientException):
+                logger.warning(f"Client logic error in '{location}': {error}")
+                msg = f"Action failed {error}"
                 return await self._respond_to_error(interaction, msg)
 
             logger.error(f"Unhandled error in '{location}':", exc_info=error)

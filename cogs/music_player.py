@@ -216,16 +216,13 @@ class Music_player(commands.Cog):
         player : wavelink = interaction.guild.voice_client
 
         if(len(tracks) == 1):
-            try:
-                if not player:
-                    player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
+            if not player:
+                player = await interaction.user.voice.channel.connect(cls=wavelink.Player)
 
-                if not player.playing:
-                    await player.play(tracks[0])
-                else:
-                    player.queue.put(tracks[0])
-            except discord.ClientException as e:
-                logger.error(f"ClientException in Music_player.play: {e}")
+            if not player.playing:
+                await player.play(tracks[0])
+            else:
+                player.queue.put(tracks[0])
 
         else:
 

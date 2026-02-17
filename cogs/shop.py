@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from pymongo.errors import PyMongoError
 import json
 from functools import partial
 from asyncio import sleep
@@ -113,19 +112,17 @@ class ItemShop(discord.ui.Select):
         Returns:
             jail_role (discord.Role): Jail role.
         """
-        try:
-            guild_data = await self.bot.database["guilds"].find_one({"_id" : str(interaction.guild_id)})
 
-            if guild_data is None:
-                return
+        guild_data = await self.bot.database["guilds"].find_one({"_id" : str(interaction.guild_id)})
 
-            role_id = guild_data.get("automod", {}).get("jail", {}).get("jail_role", 0)
+        if guild_data is None:
+            return
 
-            jail_role = interaction.guild.get_role(role_id)
+        role_id = guild_data.get("automod", {}).get("jail", {}).get("jail_role", 0)
 
-            return jail_role
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Shop.get_jail_role: {e}")
+        jail_role = interaction.guild.get_role(role_id)
+
+        return jail_role
     
     async def deduct_money(self, interaction : discord.Interaction, item):
         """
@@ -134,26 +131,31 @@ class ItemShop(discord.ui.Select):
         Arguments:
             interaction (discord.Interaction): Context interaction.
         """
-        try:
-            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : item['cost'] * -1}})
-        except PyMongoError as e:
-             logger.exception(f"PyMongoError in Shop.deduct_money: {e}")
+
+        await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : item['cost'] * -1}})
 
     async def add_item_to_user_inv(self, interaction : discord.Interaction, item_key, item_data):
-        try:
-            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{item_key}" : item_data}})
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Shop.add_item_to_user_inv: {e}")
+        """
+        Adds items to user inventory.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
+        await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set": {f"inventory.{item_key}" : item_data}})
+
 
     async def pet_activate(self, interaction : discord.Interaction, bought_pet : str):
-        try:
-            member_data = await self.get_member(interaction)
-            if member_data.get("active_pet"):
-                return
-            
-            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"active_pet" : bought_pet}})
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Shop.pet_activate: {e}")
+        """
+        Sets active pet if its not set.
+
+        Arguments:
+            interaction (discord.Interaction): Context interaction.
+        """
+        member_data = await self.get_member(interaction)
+        if member_data.get("active_pet"):
+            return
+        
+        await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$set" : {"active_pet" : bought_pet}})
 
     async def tier_picker(self, interaction):
         """
@@ -283,34 +285,31 @@ class ItemShop(discord.ui.Select):
             interaction (discord.Interaction): Context interaction.
             member_inv (dict): Member inventory.
         """
-        try:
-            tier = await self.tier_picker(interaction)
+        tier = await self.tier_picker(interaction)
 
-            if not self.items:
-                return
+        if not self.items:
+            return
 
-            items_in_tier = [{name : rest} for name, rest in self.items.items() if rest['rarity'] == tier]
+        items_in_tier = [{name : rest} for name, rest in self.items.items() if rest['rarity'] == tier]
 
-            if not items_in_tier:
-                return
+        if not items_in_tier:
+            return
 
-            picked = choice(items_in_tier)
-            key = next(iter(picked))
+        picked = choice(items_in_tier)
+        key = next(iter(picked))
 
-            if key not in member_inv:
-                await self.add_item_to_user_inv(interaction, key, picked[key])
-                message = f"{interaction.user.name} just dropped {picked[key]['emote']} **{key.capitalize()}**"
-            else:
-                how_much = randint(45, 125)
-                await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : how_much}})
-                message = f"{interaction.user.name} dropped {how_much} coins because he/she has {picked[key]['emote']} **{key.capitalize()}**"
+        if key not in member_inv:
+            await self.add_item_to_user_inv(interaction, key, picked[key])
+            message = f"{interaction.user.name} just dropped {picked[key]['emote']} **{key.capitalize()}**"
+        else:
+            how_much = randint(45, 125)
+            await self.bot.database["users"].update_one({"_id" : str(interaction.user.id)}, {"$inc" : {"coins" : how_much}})
+            message = f"{interaction.user.name} dropped {how_much} coins because he/she has {picked[key]['emote']} **{key.capitalize()}**"
 
-            new_embed = await create_embed(message, f"*Congratulations!*", discord.Color.red())
+        new_embed = await create_embed(message, f"*Congratulations!*", discord.Color.red())
 
-            await interaction.response.send_message(embed=new_embed)
-            await interaction.channel.send(interaction.user.mention)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Shop.lootbox: {e}")
+        await interaction.response.send_message(embed=new_embed)
+        await interaction.channel.send(interaction.user.mention)
 
 async def create_embed(title : str, desc : str, color: discord.Color, footer : str = ""):
     """

@@ -5,7 +5,6 @@ from random import randint, choice
 import aiohttp
 from os import getenv
 from dotenv import load_dotenv
-from pymongo.errors import PyMongoError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -145,32 +144,30 @@ class Pets(commands.Cog):
         defence, attack = 3, 5
         if current_pet == "dragon":
             defence, attack = 8, 12
-        try:
+
+        await self.bot.database["users"].update_one(
+            {"_id" : str(message.author.id)}, 
+            {"$inc" : {f"inventory.{current_pet}.xp" : int(xp)}}
+        )
+
+        member_data = await self.get_member(message.author)
+        current_xp = member_data.get("inventory", {}).get(current_pet, {}).get("xp", 0)
+        level = member_data.get("inventory", {}).get(current_pet, {}).get("level", 0)
+
+        if current_xp >= (20 * level):
             await self.bot.database["users"].update_one(
-                {"_id" : str(message.author.id)}, 
-                {"$inc" : {f"inventory.{current_pet}.xp" : int(xp)}}
+                {"_id" : str(message.author.id)},
+                {"$set" : {f"inventory.{current_pet}.xp" : 0},
+                "$inc" : {f"inventory.{current_pet}.level" : 1,
+                        f"inventory.{current_pet}.def" : defence,
+                        f"inventory.{current_pet}.atk" : attack}}
             )
-
-            member_data = await self.get_member(message.author)
-            current_xp = member_data.get("inventory", {}).get(current_pet, {}).get("xp", 0)
-            level = member_data.get("inventory", {}).get(current_pet, {}).get("level", 0)
-
-            if current_xp >= (20 * level):
-                await self.bot.database["users"].update_one(
-                    {"_id" : str(message.author.id)},
-                    {"$set" : {f"inventory.{current_pet}.xp" : 0},
-                    "$inc" : {f"inventory.{current_pet}.level" : 1,
-                            f"inventory.{current_pet}.def" : defence,
-                            f"inventory.{current_pet}.atk" : attack}}
-                )
-                embed = discord.Embed(
-                    title="🎉 Level Up!",
-                    description=f"Your **{current_pet}** leveled up to **{level+1}**!",
-                    color=discord.Colour.green()
-                )
-                await message.channel.send(embed=embed)
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Pets.add_pet_xp: {e}")
+            embed = discord.Embed(
+                title="🎉 Level Up!",
+                description=f"Your **{current_pet}** leveled up to **{level+1}**!",
+                color=discord.Colour.green()
+            )
+            await message.channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message : discord.Message):
@@ -208,15 +205,12 @@ class Pets(commands.Cog):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        try:
-            await self.bot.database["users"].update_one(
-                {"_id" : str(interaction.user.id)},
-                {"$set" : {"active_pet" : pet_name}}
-            )
-        except PyMongoError as e:
-            logger.exception(f"PyMongoError in Pets.choose_active_pet")
-            await interaction.response.send_message("Can't change your active pet right now, sorry!", ephemeral=True)
-            return
+        
+        await self.bot.database["users"].update_one(
+            {"_id" : str(interaction.user.id)},
+            {"$set" : {"active_pet" : pet_name}}
+        )
+
         embed = discord.Embed(
             title="✅ Active Pet Changed",
             description=f"Your active pet is now **{pet_name}**",
