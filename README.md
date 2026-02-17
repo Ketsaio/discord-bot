@@ -3,9 +3,8 @@
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
 ![Library](https://img.shields.io/badge/discord.py-2.0%2B-purple)
 ![Database](https://img.shields.io/badge/MongoDB-Ready-green)
-![Music](https://img.shields.io/badge/Lavalink-Music-red)
 ![License](https://img.shields.io/badge/license-MIT-orange)
-![Status](https://img.shields.io/badge/status-Stable-green)
+![Status](https://img.shields.io/badge/status-In%20Development-yellow)
 
 A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` and `LavaLink`. Focused on moderation, economy, ticket systems, and fun features.
 
@@ -16,7 +15,6 @@ A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` an
 - **Dynamic Views:** Interactive buttons and menus (Persistent Views).
 - **Database Integration:** Persistent data storage using MongoDB (async).
 - **Admin Tools:** Sync commands globally or locally for testing via `/sync`.
-- **Music Player:** Play your favourite songs and listen to them on voicechannel!
 
 ## 🚀 Roadmap
 
@@ -69,6 +67,30 @@ A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` an
 	  TENOR = your_tenor_api_token_here
 	  LAVALINK_CLIENT = your_lavalink_password_here
       ```
+	#### 🎵 Lavalink Setup
+
+	The music player requires a Lavalink server to function.
+
+	1.  Download `Lavalink.jar` from the official releases.
+	   
+	2.  Place `Lavalink.jar` and your `application.yml` file inside the `/lavalink` folder.
+	   
+	3.  Run the Lavalink server:
+		```bash
+		cd lavalink
+		java -jar Lavalink.jar
+		```
+		Your folder structure should look like this:
+		```text 
+		discord-bot/ 
+		├── cogs/ 					# Bot features and commands 
+		├── lavalink/ 				# Lavalink server files 
+		│ ├── .gitkeep 				# Keeps folder in git 
+		│ ├── Lavalink.jar 			<-- Add this manually! 
+		│ └── application.yml 		<-- Add this manually! 
+		├── main.py 				# Main entry point 
+		└── .env 					# Secret tokens (ignored by git)
+
 5. **Run the bot:**
 	```bash
 	python3 main.py
