@@ -65,7 +65,7 @@ A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` an
 	  DISCORD_TOKEN=your_discord_bot_token_here
 	  MONGO_URL=mongodb://localhost:27017/
 	  DEV_ID=your_discord_user_id
-	  TENOR = your_tenor_api_token_here
+	  KLIPY = your_klipy_api_token_here
 	  LAVALINK_CLIENT = your_lavalink_password_here
       ```
 
