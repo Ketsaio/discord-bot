@@ -19,11 +19,11 @@ class Pets(commands.Cog):
         
         Arguments:
             bot: Discord bot instance.
-            tenor: API Key.
+            klipy: API Key.
         '''
         self.bot = bot
         load_dotenv()
-        self.tenor = getenv("TENOR")
+        self.klipy = getenv("KLIPY")
 
     async def get_database_cog(self):
         '''
@@ -54,13 +54,18 @@ class Pets(commands.Cog):
         '''
         Sends spongebob gif after a message with unicorn equipped.
 
+        IMPORTANT!
+        To get more than 100 requests to Klipy (gif provider), you need to use their paid version.
+        
+        Klipy.com <- Link to gif provider website.
+        
         Arguments:
             message (discord.Message): Message for following up with gif.
         '''
         chance = randint(1,10)
         if chance >= 9:
             query = "spongebob"
-            url = f"https://tenor.googleapis.com/v2/search?q={query}&key={self.tenor}&limit=30"
+            url = f"https://api.klipy.com/v2/search?q={query}&key={self.klipy}&limit=30"
 
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
@@ -73,6 +78,7 @@ class Pets(commands.Cog):
                         description=f"Here's your gif:",
                         color=discord.Colour.purple()
                     )
+                    embed.set_footer(text="GIF provided by Klipy.com")
                     embed.set_image(url=gif_url)
                     await message.channel.send(embed=embed)
         

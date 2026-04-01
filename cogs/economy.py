@@ -70,7 +70,7 @@ class Economy(commands.Cog):
         if xp >= 8 * level:
             await self.bot.database["users"].update_one({"_id" : str(message.author.id)}, {"$inc" : {"level" : 1}, "$set" : {"xp" : 0}})
             
-            embed = Embed(title="**🔊 LEVEL UP **", description=f"**{message.author.mention} JUST LEVELED UP TO LEVEL{level+1}\nCONGRATULATIONS!**", color=discord.Color.random())
+            embed = Embed(title="**🔊 LEVEL UP **", description=f"**{message.author.mention} JUST LEVELED UP TO LEVEL {level+1}\nCONGRATULATIONS!**", color=discord.Color.random())
             await message.channel.send(embed=embed)
     
 

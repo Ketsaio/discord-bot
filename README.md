@@ -68,6 +68,11 @@ A robust, modular Discord bot written in Python using `discord.py`, `MongoDB` an
 	  TENOR = your_tenor_api_token_here
 	  LAVALINK_CLIENT = your_lavalink_password_here
       ```
+
+	Aditional info: Klipy limit requests to 100 per minute. To get more visit their website.
+	
+	[Klipy.com](https://klipy.com/)
+
 	#### 🎵 Lavalink Setup
 
 	The music player requires a Lavalink server to function.
